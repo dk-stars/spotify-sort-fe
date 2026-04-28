@@ -1,0 +1,41 @@
+@use '../variables' as *;
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #1a2a1a 0%, $color-bg 70%);
+}
+
+.login-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-lg;
+  padding: $space-2xl;
+  background: $color-surface;
+  border-radius: $radius-md;
+  box-shadow: $shadow-card;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+
+  &__logo {
+    width: 64px;
+    height: 64px;
+    svg { width: 100%; height: 100%; fill: $color-green; }
+  }
+
+  &__title {
+    font-size: $font-size-2xl;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+  }
+
+  &__subtitle {
+    color: $color-text-muted;
+    font-size: $font-size-md;
+    line-height: 1.5;
+  }
+}

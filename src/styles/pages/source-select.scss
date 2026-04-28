@@ -1,0 +1,50 @@
+@use '../variables' as *;
+
+.source-select {
+  max-width: 540px;
+  margin: 0 auto;
+  padding: $space-2xl $space-md;
+
+  &__title {
+    font-size: $font-size-2xl;
+    font-weight: 900;
+    margin-bottom: $space-sm;
+  }
+
+  &__subtitle {
+    color: $color-text-muted;
+    margin-bottom: $space-xl;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: $space-lg;
+  }
+}
+
+.form-group { display: flex; flex-direction: column; gap: $space-sm; }
+
+.form-label { font-size: $font-size-sm; color: $color-text-muted; font-weight: 600; }
+
+.form-select {
+  background: $color-elevated;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  color: $color-text;
+  padding: $space-sm $space-md;
+  font-size: $font-size-md;
+  cursor: pointer;
+  option { background: $color-elevated; }
+}
+
+.form-range {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: $color-border;
+  border-radius: $radius-full;
+  accent-color: $color-green;
+}
+
+.form-hint { font-size: $font-size-sm; color: $color-text-muted; }

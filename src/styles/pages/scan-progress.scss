@@ -1,0 +1,30 @@
+@use '../variables' as *;
+
+.scan-progress {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $space-lg;
+  text-align: center;
+
+  &__spinner {
+    width: 56px;
+    height: 56px;
+    border: 4px solid $color-elevated;
+    border-top-color: $color-green;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+
+  &__status {
+    font-size: $font-size-lg;
+    font-weight: 700;
+    &--error { color: $color-error; }
+  }
+
+  &__hint { color: $color-text-muted; font-size: $font-size-sm; }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }

@@ -1,0 +1,120 @@
+@use '../variables' as *;
+
+.dashboard {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: $space-xl $space-md;
+  display: flex;
+  flex-direction: column;
+  gap: $space-xl;
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $space-md;
+    flex-wrap: wrap;
+  }
+
+  &__title {
+    font-size: $font-size-2xl;
+    font-weight: 900;
+  }
+
+  &__subtitle { color: $color-text-muted; margin-top: $space-xs; }
+
+  &__panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $space-lg;
+
+    @media (max-width: 640px) { grid-template-columns: 1fr; }
+  }
+
+  &__footer { display: flex; justify-content: flex-start; }
+
+  &__summary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $space-lg;
+    padding: $space-2xl;
+    text-align: center;
+    background: $color-surface;
+    border-radius: $radius-md;
+    box-shadow: $shadow-card;
+  }
+
+  &__summary-title { font-size: $font-size-2xl; font-weight: 900; color: $color-green; }
+
+  &__summary-list {
+    list-style: disc;
+    padding-left: $space-md;
+    text-align: left;
+    color: $color-text-muted;
+    li { margin-bottom: $space-xs; }
+  }
+}
+
+.panel {
+  background: $color-surface;
+  border-radius: $radius-md;
+  padding: $space-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $space-md;
+
+  &__title {
+    font-size: $font-size-lg;
+    font-weight: 700;
+  }
+
+  &__empty { color: $color-text-muted; font-size: $font-size-sm; }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $space-sm;
+  }
+
+  &__item {
+    background: $color-elevated;
+    border-radius: $radius-sm;
+    padding: $space-sm $space-md;
+  }
+
+  &__item-label {
+    display: flex;
+    align-items: center;
+    gap: $space-sm;
+    cursor: pointer;
+
+    input[type='checkbox'] {
+      width: 16px;
+      height: 16px;
+      accent-color: $color-green;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+  }
+
+  &__item-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: $font-size-md;
+  }
+
+  &__item-count {
+    color: $color-green;
+    font-size: $font-size-sm;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  &__item-hint {
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+    margin-top: $space-xs;
+    padding-left: 24px;
+  }
+}

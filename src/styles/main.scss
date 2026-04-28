@@ -1,0 +1,47 @@
+@use 'variables' as *;
+@use 'reset';
+
+// ── Shared utilities ──────────────────────────────────────────────────────────
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-sm;
+  padding: $space-sm $space-lg;
+  border-radius: $radius-full;
+  border: none;
+  cursor: pointer;
+  font-size: $font-size-md;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition: background 0.15s, opacity 0.15s;
+
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  &--primary {
+    background: $color-green;
+    color: #000;
+    &:hover:not(:disabled) { background: $color-green-dark; }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: $color-text-muted;
+    border: 1px solid $color-border;
+    &:hover:not(:disabled) { color: $color-text; border-color: $color-text; }
+  }
+
+  &--large { padding: $space-md $space-xl; font-size: $font-size-lg; }
+}
+
+.error-text {
+  color: $color-error;
+  font-size: $font-size-sm;
+  margin-top: $space-sm;
+}
+
+.loading-text {
+  color: $color-text-muted;
+  font-size: $font-size-sm;
+}

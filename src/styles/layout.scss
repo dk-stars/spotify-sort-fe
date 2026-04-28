@@ -1,0 +1,36 @@
+@use './variables' as *;
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+
+  &__main { flex: 1; }
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $space-md $space-xl;
+  background: $color-surface;
+  border-bottom: 1px solid $color-border;
+
+  &__brand {
+    font-weight: 900;
+    font-size: $font-size-lg;
+    color: $color-green;
+    letter-spacing: -0.01em;
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: $space-md;
+  }
+
+  &__user {
+    font-size: $font-size-sm;
+    color: $color-text-muted;
+  }
+}
