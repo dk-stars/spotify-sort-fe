@@ -1,0 +1,9 @@
+.git
+.idea
+.vscode
+node_modules
+dist
+README.md
+spotify-sort
+spotify-sort-backup.git
+spotify-sort-fe-backup.git
