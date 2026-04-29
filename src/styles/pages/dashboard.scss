@@ -1,7 +1,7 @@
 @use '../variables' as *;
 
 .dashboard {
-  max-width: 960px;
+  max-width: min(1480px, calc(100vw - 40px));
   margin: 0 auto;
   padding: $space-xl $space-md;
   display: flex;
@@ -26,9 +26,9 @@
   &__panels {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: $space-lg;
+    gap: $space-xl;
 
-    @media (max-width: 640px) { grid-template-columns: 1fr; }
+    @media (max-width: 900px) { grid-template-columns: 1fr; }
   }
 
   &__footer { display: flex; justify-content: flex-start; }
@@ -59,10 +59,14 @@
 .panel {
   background: $color-surface;
   border-radius: $radius-md;
-  padding: $space-lg;
+  padding: $space-xl;
   display: flex;
   flex-direction: column;
   gap: $space-md;
+
+  @media (max-width: 640px) {
+    padding: $space-lg;
+  }
 
   &__title {
     font-size: $font-size-lg;

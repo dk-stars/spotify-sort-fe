@@ -23,7 +23,7 @@ const initialState: ProposalState = {
   error: null,
 }
 
-// Initialise selection from a completed scan result (all checked by default)
+// Initialise selection from a completed scan result (parent playlists unchecked by default)
 export const initSelection = createAsyncThunk(
   'proposal/initSelection',
   async (result: SyncSuggestResult) => result,
@@ -113,9 +113,9 @@ const proposalSlice = createSlice({
   },
   extraReducers: builder => {
     builder
-      .addCase(initSelection.fulfilled, (state, action) => {
-        state.selectedUpdateIds = action.payload.playlistsToUpdate.map(u => u.playlistId)
-        state.selectedIdeaTags = action.payload.newIdeas.map(i => i.tag)
+      .addCase(initSelection.fulfilled, state => {
+        state.selectedUpdateIds = []
+        state.selectedIdeaTags = []
         state.excludedUpdateTrackUris = {}
         state.excludedIdeaTrackUris = {}
         state.summary = null

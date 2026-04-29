@@ -20,6 +20,11 @@ function getTrackSubtitle(artistNames: string[]) {
   return artistNames.join(', ')
 }
 
+function formatPlaylistName(name: string) {
+  if (!name) return name
+  return name.charAt(0).toUpperCase() + name.slice(1)
+}
+
 export default function DashboardPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
@@ -214,9 +219,9 @@ export default function DashboardPage() {
                             onChange={() => dispatch(toggleIdea(idea.tag))}
                           />
                           <span className="panel__item-copy">
-                            <span className="panel__item-name">{idea.tag}</span>
+                            <span className="panel__item-name">{formatPlaylistName(idea.tag)}</span>
                             <span className="panel__item-hint">
-                              Create a new &ldquo;{idea.tag}&rdquo; playlist from the selected tracks.
+                              Create a new &ldquo;{formatPlaylistName(idea.tag)}&rdquo; playlist from the selected tracks.
                             </span>
                           </span>
                         </label>

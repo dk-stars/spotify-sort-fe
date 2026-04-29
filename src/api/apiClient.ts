@@ -33,6 +33,9 @@ export const startScan = (
 export const fetchScanStatus = (jobId: number): Promise<ScanStatusResponse> =>
   api.get<ScanStatusResponse>(`/scan/${jobId}`).then(r => r.data)
 
+export const cancelScan = (jobId: number): Promise<{ jobId: number; status: string }> =>
+  api.post<{ jobId: number; status: string }>(`/scan/${jobId}/cancel`).then(r => r.data)
+
 // ── Proposal ──────────────────────────────────────────────────────────────────
 export const executeProposal = (body: ExecuteRequest): Promise<ExecuteSummary> =>
   api.post<ExecuteSummary>('/proposal/execute', body).then(r => r.data)

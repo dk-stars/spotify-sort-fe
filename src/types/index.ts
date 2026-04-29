@@ -38,13 +38,15 @@ export interface SyncSuggestResult {
 }
 
 // ── Scan ──────────────────────────────────────────────────────────────────────
-export type ScanStatus = 'PENDING' | 'RUNNING' | 'DONE' | 'FAILED'
+export type ScanStatus = 'PENDING' | 'RUNNING' | 'CANCELLED' | 'DONE' | 'FAILED'
 
 export interface ScanStatusResponse {
   jobId: number
   status: ScanStatus
   result: SyncSuggestResult | null
   error: string | null
+  currentStep: string | null
+  progressPercent: number
 }
 
 // ── Proposal execution ────────────────────────────────────────────────────────
