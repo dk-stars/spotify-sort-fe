@@ -19,7 +19,18 @@ const STEP_LABELS = [
 export default function ScanProgressPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
-  const { jobId, status, error, currentStep, progressPercent, canceling } = useAppSelector(s => s.scan)
+  const {
+    jobId,
+    status,
+    error,
+    currentStep,
+    progressPercent,
+    currentItem,
+    totalItems,
+    currentFetchRequest,
+    totalFetchRequests,
+    canceling,
+  } = useAppSelector(s => s.scan)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const activeStepIndex = useMemo(() => {
@@ -27,6 +38,13 @@ export default function ScanProgressPage() {
     return index === -1 ? STEP_LABELS.length - 1 : index
   }, [progressPercent])
   const activeStage = STEP_LABELS[activeStepIndex]?.label ?? STEP_LABELS[STEP_LABELS.length - 1].label
+  const hasItemProgress = totalItems > 0
+  const itemProgressLabel = hasItemProgress ? `${currentItem}/${totalItems} tracks` : 'Preparing track iteration'
+  const hasFetchProgress = totalFetchRequests > 0
+  const fetchProgressPercent = hasFetchProgress ? Math.round((currentFetchRequest / totalFetchRequests) * 100) : 0
+  const fetchProgressLabel = hasFetchProgress
+    ? `${currentFetchRequest}/${totalFetchRequests} requests`
+    : 'Waiting for first track request'
 
   useEffect(() => {
     if (!jobId) {
@@ -106,6 +124,20 @@ export default function ScanProgressPage() {
             <p className="scan-progress__status">
               {currentStep || (status === 'PENDING' ? 'Waiting to start…' : 'Analyzing your tracks…')}
             </p>
+
+            <div className="scan-progress__subsection">
+              <div className="scan-progress__subsection-head">
+                <span className="scan-progress__subsection-title">Track fetch API requests</span>
+                <span className="scan-progress__subsection-meta">{fetchProgressLabel}</span>
+              </div>
+              <div className="scan-progress__bar scan-progress__bar--fetch" aria-label="Track fetch request progress">
+                <div
+                  className="scan-progress__bar-fill scan-progress__bar-fill--fetch"
+                  style={{ width: `${Math.max(fetchProgressPercent, hasFetchProgress ? 8 : 4)}%` }}
+                />
+              </div>
+            </div>
+
             <div className="scan-progress__bar" aria-label="Scan progress">
               <div
                 className="scan-progress__bar-fill"
@@ -114,7 +146,15 @@ export default function ScanProgressPage() {
             </div>
             <div className="scan-progress__bar-meta">
               <span>{progressPercent}%</span>
-              <span>{canceling ? 'Cancellation requested' : status === 'PENDING' ? 'Preparing job' : 'Working through your library'}</span>
+              <span>
+                {canceling
+                  ? 'Cancellation requested'
+                  : hasItemProgress
+                    ? itemProgressLabel
+                    : status === 'PENDING'
+                      ? 'Preparing job'
+                      : 'Working through your library'}
+              </span>
             </div>
 
             <div className="scan-progress__snapshot-grid">
@@ -125,6 +165,14 @@ export default function ScanProgressPage() {
               <div className="scan-progress__snapshot-card">
                 <span className="scan-progress__snapshot-label">Current action</span>
                 <strong>{currentStep || 'Preparing scan'}</strong>
+              </div>
+              <div className="scan-progress__snapshot-card">
+                <span className="scan-progress__snapshot-label">Track iteration</span>
+                <strong>{itemProgressLabel}</strong>
+              </div>
+              <div className="scan-progress__snapshot-card">
+                <span className="scan-progress__snapshot-label">Fetch requests</span>
+                <strong>{fetchProgressLabel}</strong>
               </div>
             </div>
 

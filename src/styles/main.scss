@@ -96,6 +96,56 @@ body {
   color: $color-green-soft;
 }
 
+.selection-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+
+  input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    margin: 0;
+  }
+
+  &__track {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: 46px;
+    height: 28px;
+    padding: 3px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  }
+
+  &__thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: #f4fff7;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    transition: transform 180ms ease;
+  }
+
+  input:focus-visible + .selection-switch__track {
+    box-shadow: 0 0 0 3px rgba($color-green-soft, 0.2);
+  }
+
+  input:checked + .selection-switch__track {
+    background: linear-gradient(135deg, rgba($color-green-soft, 0.92), rgba($color-green, 0.9));
+    border-color: rgba($color-green-soft, 0.65);
+  }
+
+  input:checked + .selection-switch__track .selection-switch__thumb {
+    transform: translateX(18px);
+  }
+}
+
 .brand-mark {
   display: inline-flex;
   align-items: center;

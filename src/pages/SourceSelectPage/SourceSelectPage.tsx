@@ -85,13 +85,18 @@ export default function SourceSelectPage() {
                   key={p.id}
                   className={`source-select__playlist${selectedId === p.id ? ' source-select__playlist--selected' : ''}`}
                 >
-                  <input
-                    type="radio"
-                    name="playlist"
-                    value={p.id}
-                    checked={selectedId === p.id}
-                    onChange={e => setSelectedId(e.target.value)}
-                  />
+                  <span className="selection-switch selection-switch--radio">
+                    <input
+                      type="radio"
+                      name="playlist"
+                      value={p.id}
+                      checked={selectedId === p.id}
+                      onChange={e => setSelectedId(e.target.value)}
+                    />
+                    <span className="selection-switch__track">
+                      <span className="selection-switch__thumb" />
+                    </span>
+                  </span>
 
                   <span className="source-select__playlist-copy">
                     <span className="source-select__playlist-name-row">

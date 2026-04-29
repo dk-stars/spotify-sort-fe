@@ -25,6 +25,7 @@ export interface TrackRef {
 export interface PlaylistUpdate {
   playlistId: string
   playlistName: string
+  totalTracks: number
   tracks: TrackRef[]
 }
 
@@ -48,6 +49,10 @@ export interface ScanStatusResponse {
   error: string | null
   currentStep: string | null
   progressPercent: number
+  currentItem: number
+  totalItems: number
+  currentFetchRequest: number
+  totalFetchRequests: number
 }
 
 // ── Proposal execution ────────────────────────────────────────────────────────

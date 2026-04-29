@@ -12,12 +12,31 @@ import { resetScan } from '../../features/scan/scanSlice'
 import { useAppDispatch, useAppSelector } from '../../hooks'
 import '../../styles/pages/dashboard.scss'
 
-function pluralizeTracks(count: number) {
-  return `${count} track${count === 1 ? '' : 's'}`
+function formatTrackCount(selectedCount: number, totalCount: number) {
+  return `${selectedCount}/${totalCount} tracks`
 }
 
 function getTrackSubtitle(artistNames: string[]) {
   return artistNames.join(', ')
+}
+
+function getTopArtists(tracks: { artistNames: string[] }[]) {
+  const counts = new Map<string, number>()
+
+  tracks.forEach(track => {
+    track.artistNames.forEach(artistName => {
+      const normalized = artistName.trim()
+      if (!normalized) return
+      counts.set(normalized, (counts.get(normalized) ?? 0) + 1)
+    })
+  })
+
+  const topArtists = [...counts.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .slice(0, 3)
+    .map(([artistName]) => artistName)
+
+  return topArtists.length > 0 ? topArtists.join(', ') : 'No artist data'
 }
 
 function formatPlaylistName(name: string) {
@@ -62,6 +81,30 @@ export default function DashboardPage() {
 
   const handleApply = () => {
     dispatch(applyProposal())
+  }
+
+  const handleUpdateTrackToggle = (playlistId: string, trackUri: string, isPlaylistSelected: boolean, isTrackSelected: boolean) => {
+    if (!isPlaylistSelected) {
+      dispatch(toggleUpdate(playlistId))
+      if (!isTrackSelected) {
+        dispatch(toggleUpdateTrack({ playlistId, trackUri }))
+      }
+      return
+    }
+
+    dispatch(toggleUpdateTrack({ playlistId, trackUri }))
+  }
+
+  const handleIdeaTrackToggle = (tag: string, trackUri: string, isPlaylistSelected: boolean, isTrackSelected: boolean) => {
+    if (!isPlaylistSelected) {
+      dispatch(toggleIdea(tag))
+      if (!isTrackSelected) {
+        dispatch(toggleIdeaTrack({ tag, trackUri }))
+      }
+      return
+    }
+
+    dispatch(toggleIdeaTrack({ tag, trackUri }))
   }
 
   const toggleExpanded = (key: string) => {
@@ -155,26 +198,30 @@ export default function DashboardPage() {
                   const excluded = excludedUpdateTrackUris[u.playlistId] ?? []
                   const includedCount = isSelected ? u.tracks.length - excluded.length : 0
                   const expanded = !!expandedItems[cardKey]
+                  const topArtists = getTopArtists(u.tracks)
 
                   return (
                     <li key={u.playlistId} className={`panel__item${expanded ? ' panel__item--expanded' : ''}`}>
                       <div className="panel__item-shell">
                         <label className="panel__item-label">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => dispatch(toggleUpdate(u.playlistId))}
-                          />
+                          <span className="selection-switch">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => dispatch(toggleUpdate(u.playlistId))}
+                            />
+                            <span className="selection-switch__track">
+                              <span className="selection-switch__thumb" />
+                            </span>
+                          </span>
                           <span className="panel__item-copy">
                             <span className="panel__item-name">{u.playlistName}</span>
-                            <span className="panel__item-hint">
-                              Add selected tracks to this existing playlist.
-                            </span>
+                            <span className="panel__item-hint">{topArtists}</span>
                           </span>
                         </label>
 
                         <div className="panel__item-meta">
-                          <span className="panel__item-count">{pluralizeTracks(includedCount)}</span>
+                          <span className="panel__item-count">{formatTrackCount(includedCount, u.totalTracks)}</span>
                           <button
                             type="button"
                             className="panel__expand"
@@ -197,11 +244,7 @@ export default function DashboardPage() {
                                   <input
                                     type="checkbox"
                                     checked={isSelected && isTrackSelected}
-                                    disabled={!isSelected}
-                                    onChange={() => dispatch(toggleUpdateTrack({
-                                      playlistId: u.playlistId,
-                                      trackUri: track.trackUri,
-                                    }))}
+                                    onChange={() => handleUpdateTrackToggle(u.playlistId, track.trackUri, isSelected, isTrackSelected)}
                                   />
                                   {track.albumImageUrl ? (
                                     <img
@@ -252,26 +295,30 @@ export default function DashboardPage() {
                   const excluded = excludedIdeaTrackUris[idea.tag] ?? []
                   const includedCount = isSelected ? idea.tracks.length - excluded.length : 0
                   const expanded = !!expandedItems[cardKey]
+                  const topArtists = getTopArtists(idea.tracks)
 
                   return (
                     <li key={idea.tag} className={`panel__item${expanded ? ' panel__item--expanded' : ''}`}>
                       <div className="panel__item-shell">
                         <label className="panel__item-label">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => dispatch(toggleIdea(idea.tag))}
-                          />
+                          <span className="selection-switch">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => dispatch(toggleIdea(idea.tag))}
+                            />
+                            <span className="selection-switch__track">
+                              <span className="selection-switch__thumb" />
+                            </span>
+                          </span>
                           <span className="panel__item-copy">
                             <span className="panel__item-name">{formatPlaylistName(idea.tag)}</span>
-                            <span className="panel__item-hint">
-                              Create a new &ldquo;{formatPlaylistName(idea.tag)}&rdquo; playlist from the selected tracks.
-                            </span>
+                            <span className="panel__item-hint">{topArtists}</span>
                           </span>
                         </label>
 
                         <div className="panel__item-meta">
-                          <span className="panel__item-count">{pluralizeTracks(includedCount)}</span>
+                          <span className="panel__item-count">{formatTrackCount(includedCount, idea.tracks.length)}</span>
                           <button
                             type="button"
                             className="panel__expand"
@@ -294,11 +341,7 @@ export default function DashboardPage() {
                                   <input
                                     type="checkbox"
                                     checked={isSelected && isTrackSelected}
-                                    disabled={!isSelected}
-                                    onChange={() => dispatch(toggleIdeaTrack({
-                                      tag: idea.tag,
-                                      trackUri: track.trackUri,
-                                    }))}
+                                    onChange={() => handleIdeaTrackToggle(idea.tag, track.trackUri, isSelected, isTrackSelected)}
                                   />
                                   {track.albumImageUrl ? (
                                     <img

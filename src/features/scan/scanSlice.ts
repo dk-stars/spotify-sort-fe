@@ -10,6 +10,10 @@ interface ScanState {
   loading: boolean
   currentStep: string | null
   progressPercent: number
+  currentItem: number
+  totalItems: number
+  currentFetchRequest: number
+  totalFetchRequests: number
   canceling: boolean
 }
 
@@ -21,6 +25,10 @@ const initialState: ScanState = {
   loading: false,
   currentStep: null,
   progressPercent: 0,
+  currentItem: 0,
+  totalItems: 0,
+  currentFetchRequest: 0,
+  totalFetchRequests: 0,
   canceling: false,
 }
 
@@ -63,6 +71,10 @@ const scanSlice = createSlice({
         state.loading = false
         state.currentStep = 'Queued'
         state.progressPercent = 0
+        state.currentItem = 0
+        state.totalItems = 0
+        state.currentFetchRequest = 0
+        state.totalFetchRequests = 0
         state.canceling = false
       })
       .addCase(submitScan.rejected, (state, action) => {
@@ -74,6 +86,10 @@ const scanSlice = createSlice({
         state.result = action.payload.result
         state.currentStep = action.payload.currentStep
         state.progressPercent = action.payload.progressPercent
+        state.currentItem = action.payload.currentItem
+        state.totalItems = action.payload.totalItems
+        state.currentFetchRequest = action.payload.currentFetchRequest
+        state.totalFetchRequests = action.payload.totalFetchRequests
         if (action.payload.status === 'CANCELLED') {
           state.canceling = false
         }
