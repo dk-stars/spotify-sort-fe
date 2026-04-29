@@ -1,11 +1,12 @@
 import AppFooter from '../../components/AppFooter'
 import BrandMark from '../../components/BrandMark'
+import { API_BASE_URL } from '../../config'
 import '../../styles/pages/login.scss'
 
 export default function LoginPage() {
   const handleLogin = () => {
     // Navigate to the backend OAuth redirect
-    window.location.href = '/api/auth/login'
+    window.location.href = `${API_BASE_URL}/api/auth/login`
   }
 
   return (
