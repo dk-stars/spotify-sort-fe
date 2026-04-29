@@ -80,14 +80,31 @@
   &__item {
     background: $color-elevated;
     border-radius: $radius-sm;
-    padding: $space-sm $space-md;
+    padding: $space-md;
+    transition: background-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  &__item--expanded {
+    box-shadow: inset 0 0 0 1px rgba($color-green, 0.18);
+  }
+
+  &__item-shell {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $space-md;
+
+    @media (max-width: 640px) {
+      flex-direction: column;
+    }
   }
 
   &__item-label {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: $space-sm;
     cursor: pointer;
+    flex: 1;
 
     input[type='checkbox'] {
       width: 16px;
@@ -95,13 +112,32 @@
       accent-color: $color-green;
       cursor: pointer;
       flex-shrink: 0;
+      margin-top: 3px;
     }
   }
 
+  &__item-copy {
+    display: flex;
+    flex-direction: column;
+    gap: $space-xs;
+    min-width: 0;
+  }
+
   &__item-name {
-    flex: 1;
     font-weight: 600;
     font-size: $font-size-md;
+  }
+
+  &__item-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: $space-xs;
+
+    @media (max-width: 640px) {
+      align-items: flex-start;
+      width: 100%;
+    }
   }
 
   &__item-count {
@@ -111,10 +147,122 @@
     white-space: nowrap;
   }
 
+  &__expand {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba($color-green, 0.22);
+    border-radius: $radius-full;
+    background: rgba($color-green, 0.08);
+    color: $color-green;
+    cursor: pointer;
+    transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
+
+    &:hover {
+      background: rgba($color-green, 0.14);
+      border-color: rgba($color-green, 0.32);
+    }
+
+    &[aria-expanded='true'] .panel__expand-icon {
+      transform: rotate(180deg);
+    }
+  }
+
+  &__expand-icon {
+    font-size: 18px;
+    line-height: 1;
+    transition: transform 160ms ease;
+  }
+
   &__item-hint {
     font-size: $font-size-sm;
     color: $color-text-muted;
-    margin-top: $space-xs;
-    padding-left: 24px;
+    margin-top: 0;
+  }
+
+  &__tracks {
+    display: flex;
+    flex-direction: column;
+    gap: $space-xs;
+    margin-top: $space-md;
+    padding-top: $space-md;
+    border-top: 1px solid rgba($color-border, 0.7);
+  }
+
+  &__track-row {
+    list-style: none;
+  }
+
+  &__track {
+    display: grid;
+    grid-template-columns: auto 48px minmax(0, 1fr);
+    align-items: center;
+    gap: $space-sm;
+    padding: $space-xs $space-sm;
+    border-radius: $radius-sm;
+    background: rgba($color-surface, 0.5);
+    cursor: pointer;
+
+    input[type='checkbox'] {
+      width: 16px;
+      height: 16px;
+      accent-color: $color-green;
+    }
+
+    @media (max-width: 480px) {
+      grid-template-columns: auto 40px minmax(0, 1fr);
+      padding-inline: $space-xs;
+    }
+  }
+
+  &__track--disabled {
+    opacity: 0.65;
+  }
+
+  &__track-cover {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    object-fit: cover;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
+
+    @media (max-width: 480px) {
+      width: 40px;
+      height: 40px;
+    }
+  }
+
+  &__track-cover--placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba($color-green, 0.2), rgba($color-green, 0.08));
+    color: $color-green;
+    font-weight: 800;
+  }
+
+  &__track-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__track-name {
+    font-size: $font-size-sm;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__track-artist {
+    color: $color-text-muted;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }

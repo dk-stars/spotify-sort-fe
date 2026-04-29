@@ -17,6 +17,8 @@ export interface TrackRef {
   trackId: string
   trackName: string
   trackUri: string
+  artistNames: string[]
+  albumImageUrl: string | null
 }
 
 export interface PlaylistUpdate {

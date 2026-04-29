@@ -18,6 +18,12 @@ export default function SourceSelectPage() {
     dispatch(loadPlaylists())
   }, [dispatch])
 
+  useEffect(() => {
+    if (!selectedId && items.length > 0) {
+      setSelectedId(items[0].id)
+    }
+  }, [items, selectedId])
+
   const handleStart = async () => {
     if (!selectedId) return
     const result = await dispatch(submitScan({ sourcePlaylistId: selectedId, threshold }))
@@ -30,7 +36,7 @@ export default function SourceSelectPage() {
     <div className="source-select">
       <h1 className="source-select__title">Select Source Playlist</h1>
       <p className="source-select__subtitle">
-        Choose the playlist you want to analyze and organize.
+        Liked Songs is preselected, but you can switch to any playlist you own.
       </p>
 
       {error && <p className="error-text">{error}</p>}
@@ -49,10 +55,9 @@ export default function SourceSelectPage() {
               value={selectedId}
               onChange={e => setSelectedId(e.target.value)}
             >
-              <option value="">— pick a playlist —</option>
               {items.map(p => (
                 <option key={p.id} value={p.id}>
-                  {p.name} ({p.totalTracks} tracks)
+                  {p.name}{p.totalTracks > 0 ? ` (${p.totalTracks} tracks)` : ''}
                 </option>
               ))}
             </select>
@@ -80,7 +85,7 @@ export default function SourceSelectPage() {
         <button
           className="btn btn--primary"
           onClick={handleStart}
-          disabled={!selectedId || scanLoading}
+          disabled={items.length === 0 || !selectedId || scanLoading}
         >
           {scanLoading ? 'Starting…' : 'Start Scan'}
         </button>

@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   toggleUpdate,
   toggleIdea,
+  toggleUpdateTrack,
+  toggleIdeaTrack,
   applyProposal,
   resetProposal,
 } from '../../features/proposal/proposalSlice'
@@ -9,12 +12,29 @@ import { resetScan } from '../../features/scan/scanSlice'
 import { useAppDispatch, useAppSelector } from '../../hooks'
 import '../../styles/pages/dashboard.scss'
 
+function pluralizeTracks(count: number) {
+  return `${count} track${count === 1 ? '' : 's'}`
+}
+
+function getTrackSubtitle(artistNames: string[]) {
+  return artistNames.join(', ')
+}
+
 export default function DashboardPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
-  const { selectedUpdateIds, selectedIdeaTags, executing, summary, error } =
+  const {
+    selectedUpdateIds,
+    selectedIdeaTags,
+    excludedUpdateTrackUris,
+    excludedIdeaTrackUris,
+    executing,
+    summary,
+    error,
+  } =
     useAppSelector(s => s.proposal)
   const result = useAppSelector(s => s.scan.result)
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({})
 
   if (!result) {
     navigate('/')
@@ -26,6 +46,10 @@ export default function DashboardPage() {
 
   const handleApply = () => {
     dispatch(applyProposal())
+  }
+
+  const toggleExpanded = (key: string) => {
+    setExpandedItems(current => ({ ...current, [key]: !current[key] }))
   }
 
   const handleReset = () => {
@@ -81,17 +105,85 @@ export default function DashboardPage() {
           ) : (
             <ul className="panel__list">
               {playlistsToUpdate.map(u => (
-                <li key={u.playlistId} className="panel__item">
-                  <label className="panel__item-label">
-                    <input
-                      type="checkbox"
-                      checked={selectedUpdateIds.includes(u.playlistId)}
-                      onChange={() => dispatch(toggleUpdate(u.playlistId))}
-                    />
-                    <span className="panel__item-name">{u.playlistName}</span>
-                    <span className="panel__item-count">+{u.tracks.length} tracks</span>
-                  </label>
-                </li>
+                (() => {
+                  const cardKey = `update:${u.playlistId}`
+                  const isSelected = selectedUpdateIds.includes(u.playlistId)
+                  const excluded = excludedUpdateTrackUris[u.playlistId] ?? []
+                  const includedCount = isSelected ? u.tracks.length - excluded.length : 0
+                  const expanded = !!expandedItems[cardKey]
+
+                  return (
+                    <li key={u.playlistId} className={`panel__item${expanded ? ' panel__item--expanded' : ''}`}>
+                      <div className="panel__item-shell">
+                        <label className="panel__item-label">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => dispatch(toggleUpdate(u.playlistId))}
+                          />
+                          <span className="panel__item-copy">
+                            <span className="panel__item-name">{u.playlistName}</span>
+                            <span className="panel__item-hint">
+                              Add selected tracks to this existing playlist.
+                            </span>
+                          </span>
+                        </label>
+
+                        <div className="panel__item-meta">
+                          <span className="panel__item-count">{pluralizeTracks(includedCount)}</span>
+                          <button
+                            type="button"
+                            className="panel__expand"
+                            aria-expanded={expanded}
+                            aria-label={expanded ? 'Collapse track list' : 'Expand track list'}
+                            onClick={() => toggleExpanded(cardKey)}
+                          >
+                            <span className="panel__expand-icon" aria-hidden="true">⌄</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {expanded && (
+                        <ul className="panel__tracks">
+                          {u.tracks.map(track => {
+                            const isTrackSelected = !excluded.includes(track.trackUri)
+                            return (
+                              <li key={track.trackUri} className="panel__track-row">
+                                <label className={`panel__track${!isSelected ? ' panel__track--disabled' : ''}`}>
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected && isTrackSelected}
+                                    disabled={!isSelected}
+                                    onChange={() => dispatch(toggleUpdateTrack({
+                                      playlistId: u.playlistId,
+                                      trackUri: track.trackUri,
+                                    }))}
+                                  />
+                                  {track.albumImageUrl ? (
+                                    <img
+                                      className="panel__track-cover"
+                                      src={track.albumImageUrl}
+                                      alt=""
+                                      loading="lazy"
+                                    />
+                                  ) : (
+                                    <span className="panel__track-cover panel__track-cover--placeholder" aria-hidden="true">
+                                      {track.trackName.slice(0, 1).toUpperCase()}
+                                    </span>
+                                  )}
+                                  <span className="panel__track-copy">
+                                    <span className="panel__track-name">{track.trackName}</span>
+                                    <span className="panel__track-artist">{getTrackSubtitle(track.artistNames)}</span>
+                                  </span>
+                                </label>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      )}
+                    </li>
+                  )
+                })()
               ))}
             </ul>
           )}
@@ -105,18 +197,85 @@ export default function DashboardPage() {
           ) : (
             <ul className="panel__list">
               {newIdeas.map(idea => (
-                <li key={idea.tag} className="panel__item">
-                  <label className="panel__item-label">
-                    <input
-                      type="checkbox"
-                      checked={selectedIdeaTags.includes(idea.tag)}
-                      onChange={() => dispatch(toggleIdea(idea.tag))}
-                    />
-                    <span className="panel__item-name">{idea.tag}</span>
-                    <span className="panel__item-count">{idea.tracks.length} tracks</span>
-                  </label>
-                  <p className="panel__item-hint">Create new &ldquo;{idea.tag}&rdquo; playlist</p>
-                </li>
+                (() => {
+                  const cardKey = `idea:${idea.tag}`
+                  const isSelected = selectedIdeaTags.includes(idea.tag)
+                  const excluded = excludedIdeaTrackUris[idea.tag] ?? []
+                  const includedCount = isSelected ? idea.tracks.length - excluded.length : 0
+                  const expanded = !!expandedItems[cardKey]
+
+                  return (
+                    <li key={idea.tag} className={`panel__item${expanded ? ' panel__item--expanded' : ''}`}>
+                      <div className="panel__item-shell">
+                        <label className="panel__item-label">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => dispatch(toggleIdea(idea.tag))}
+                          />
+                          <span className="panel__item-copy">
+                            <span className="panel__item-name">{idea.tag}</span>
+                            <span className="panel__item-hint">
+                              Create a new &ldquo;{idea.tag}&rdquo; playlist from the selected tracks.
+                            </span>
+                          </span>
+                        </label>
+
+                        <div className="panel__item-meta">
+                          <span className="panel__item-count">{pluralizeTracks(includedCount)}</span>
+                          <button
+                            type="button"
+                            className="panel__expand"
+                            aria-expanded={expanded}
+                            aria-label={expanded ? 'Collapse track list' : 'Expand track list'}
+                            onClick={() => toggleExpanded(cardKey)}
+                          >
+                            <span className="panel__expand-icon" aria-hidden="true">⌄</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {expanded && (
+                        <ul className="panel__tracks">
+                          {idea.tracks.map(track => {
+                            const isTrackSelected = !excluded.includes(track.trackUri)
+                            return (
+                              <li key={track.trackUri} className="panel__track-row">
+                                <label className={`panel__track${!isSelected ? ' panel__track--disabled' : ''}`}>
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected && isTrackSelected}
+                                    disabled={!isSelected}
+                                    onChange={() => dispatch(toggleIdeaTrack({
+                                      tag: idea.tag,
+                                      trackUri: track.trackUri,
+                                    }))}
+                                  />
+                                  {track.albumImageUrl ? (
+                                    <img
+                                      className="panel__track-cover"
+                                      src={track.albumImageUrl}
+                                      alt=""
+                                      loading="lazy"
+                                    />
+                                  ) : (
+                                    <span className="panel__track-cover panel__track-cover--placeholder" aria-hidden="true">
+                                      {track.trackName.slice(0, 1).toUpperCase()}
+                                    </span>
+                                  )}
+                                  <span className="panel__track-copy">
+                                    <span className="panel__track-name">{track.trackName}</span>
+                                    <span className="panel__track-artist">{getTrackSubtitle(track.artistNames)}</span>
+                                  </span>
+                                </label>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      )}
+                    </li>
+                  )
+                })()
               ))}
             </ul>
           )}

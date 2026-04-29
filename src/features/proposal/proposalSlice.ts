@@ -6,6 +6,8 @@ interface ProposalState {
   // Sets of keys the user has checked
   selectedUpdateIds: string[]   // playlistId
   selectedIdeaTags: string[]    // tag name
+  excludedUpdateTrackUris: Record<string, string[]>
+  excludedIdeaTrackUris: Record<string, string[]>
   executing: boolean
   summary: ExecuteSummary | null
   error: string | null
@@ -14,6 +16,8 @@ interface ProposalState {
 const initialState: ProposalState = {
   selectedUpdateIds: [],
   selectedIdeaTags: [],
+  excludedUpdateTrackUris: {},
+  excludedIdeaTrackUris: {},
   executing: false,
   summary: null,
   error: null,
@@ -36,15 +40,34 @@ export const applyProposal = createAsyncThunk(
     const result: SyncSuggestResult = scan.result
     const updates = result.playlistsToUpdate
       .filter(u => proposal.selectedUpdateIds.includes(u.playlistId))
-      .map(u => ({ playlistId: u.playlistId, trackUris: u.tracks.map(t => t.trackUri) }))
+      .map(u => ({
+        playlistId: u.playlistId,
+        trackUris: u.tracks
+          .filter(t => !(proposal.excludedUpdateTrackUris[u.playlistId] ?? []).includes(t.trackUri))
+          .map(t => t.trackUri),
+      }))
+      .filter(u => u.trackUris.length > 0)
 
     const creates = result.newIdeas
       .filter(i => proposal.selectedIdeaTags.includes(i.tag))
-      .map(i => ({ playlistName: i.tag, trackUris: i.tracks.map(t => t.trackUri) }))
+      .map(i => ({
+        playlistName: i.tag,
+        trackUris: i.tracks
+          .filter(t => !(proposal.excludedIdeaTrackUris[i.tag] ?? []).includes(t.trackUri))
+          .map(t => t.trackUri),
+      }))
+      .filter(i => i.trackUris.length > 0)
 
     return await executeProposal({ updates, creates })
   },
 )
+
+function toggleTrackUri(stateMap: Record<string, string[]>, groupKey: string, trackUri: string) {
+  const current = stateMap[groupKey] ?? []
+  stateMap[groupKey] = current.includes(trackUri)
+    ? current.filter(uri => uri !== trackUri)
+    : [...current, trackUri]
+}
 
 const proposalSlice = createSlice({
   name: 'proposal',
@@ -66,6 +89,26 @@ const proposalSlice = createSlice({
         state.selectedIdeaTags.push(tag)
       }
     },
+    toggleUpdateTrack: (
+      state,
+      action: PayloadAction<{ playlistId: string; trackUri: string }>,
+    ) => {
+      toggleTrackUri(
+        state.excludedUpdateTrackUris,
+        action.payload.playlistId,
+        action.payload.trackUri,
+      )
+    },
+    toggleIdeaTrack: (
+      state,
+      action: PayloadAction<{ tag: string; trackUri: string }>,
+    ) => {
+      toggleTrackUri(
+        state.excludedIdeaTrackUris,
+        action.payload.tag,
+        action.payload.trackUri,
+      )
+    },
     resetProposal: () => initialState,
   },
   extraReducers: builder => {
@@ -73,6 +116,8 @@ const proposalSlice = createSlice({
       .addCase(initSelection.fulfilled, (state, action) => {
         state.selectedUpdateIds = action.payload.playlistsToUpdate.map(u => u.playlistId)
         state.selectedIdeaTags = action.payload.newIdeas.map(i => i.tag)
+        state.excludedUpdateTrackUris = {}
+        state.excludedIdeaTrackUris = {}
         state.summary = null
         state.error = null
       })
@@ -91,5 +136,11 @@ const proposalSlice = createSlice({
   },
 })
 
-export const { toggleUpdate, toggleIdea, resetProposal } = proposalSlice.actions
+export const {
+  toggleUpdate,
+  toggleIdea,
+  toggleUpdateTrack,
+  toggleIdeaTrack,
+  resetProposal,
+} = proposalSlice.actions
 export default proposalSlice.reducer
