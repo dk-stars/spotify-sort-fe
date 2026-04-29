@@ -20,5 +20,27 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    build: {
+      target: 'es2020',
+      sourcemap: false,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+              return 'vendor-react'
+            }
+            if (id.includes('node_modules/react-router-dom') || id.includes('node_modules/react-router')) {
+              return 'vendor-router'
+            }
+            if (id.includes('node_modules/@reduxjs') || id.includes('node_modules/react-redux') || id.includes('node_modules/redux')) {
+              return 'vendor-redux'
+            }
+            if (id.includes('node_modules/axios')) {
+              return 'vendor-http'
+            }
+          },
+        },
+      },
+    },
   }
 })

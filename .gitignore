@@ -3,3 +3,9 @@ dist/
 .env
 .env.local
 *.local
+.idea/.gitignore
+.idea/misc.xml
+.idea/modules.xml
+.idea/spotify-sort-fe.iml
+.idea/vcs.xml
+.gitignore

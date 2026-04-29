@@ -1,14 +1,17 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
 import LoginPage from './pages/LoginPage/LoginPage'
-import SourceSelectPage from './pages/SourceSelectPage/SourceSelectPage'
-import ScanProgressPage from './pages/ScanProgressPage/ScanProgressPage'
-import DashboardPage from './pages/DashboardPage/DashboardPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
+
+const SourceSelectPage = lazy(() => import('./pages/SourceSelectPage/SourceSelectPage'))
+const ScanProgressPage = lazy(() => import('./pages/ScanProgressPage/ScanProgressPage'))
+const DashboardPage = lazy(() => import('./pages/DashboardPage/DashboardPage'))
 
 export default function App() {
   return (
     <BrowserRouter>
+      <Suspense fallback={null}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
 
@@ -45,6 +48,7 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }
