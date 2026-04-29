@@ -6,4 +6,4 @@ function tryToGetEnv(key: keyof Window['_env_'], defaultValue: string): string {
     return value;
 }
 
-export const API_BASE_URL = tryToGetEnv('API_BASE_URL', 'http://localhost:8085');
+export const API_BASE_URL = tryToGetEnv('API_BASE_URL', 'http://localhost:8080');
