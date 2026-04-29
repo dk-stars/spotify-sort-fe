@@ -6,9 +6,10 @@ import type {
   ExecuteRequest,
   ExecuteSummary,
 } from '../types'
+import { API_BASE_URL } from '../config'
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: `${API_BASE_URL}/api`,
   withCredentials: true, // send session cookie on every request
 })
 

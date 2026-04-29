@@ -11,5 +11,7 @@ FROM nginx:alpine
 WORKDIR /usr/share/nginx/html
 COPY --from=build /app/dist ./
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY public/env-config.js /usr/share/nginx/html/env-config.js
+CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/env-config.js > /usr/share/nginx/html/env-config.js && nginx -g 'daemon off;'"]
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD curl -f http://localhost:80 || exit 1
 EXPOSE 80
