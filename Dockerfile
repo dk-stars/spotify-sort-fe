@@ -11,4 +11,5 @@ FROM nginx:alpine
 WORKDIR /usr/share/nginx/html
 COPY --from=build /app/dist ./
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
+ENV API_BACKEND_URL=http://backend:8080
 EXPOSE 80
