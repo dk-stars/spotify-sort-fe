@@ -1,32 +1,136 @@
 @use './variables' as *;
 
 .layout {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  overflow: hidden;
 
-  &__main { flex: 1; }
+  &__orb {
+    position: absolute;
+    border-radius: 999px;
+    filter: blur(24px);
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
+  &__orb--one {
+    top: -80px;
+    left: -40px;
+    width: 260px;
+    height: 260px;
+    background: radial-gradient(circle, rgba($color-green, 0.3), transparent 70%);
+  }
+
+  &__orb--two {
+    top: 220px;
+    right: -120px;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba($color-green-soft, 0.18), transparent 70%);
+  }
+
+  &__main {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  &__main-inner {
+    width: min(1520px, calc(100vw - 48px));
+
+    @media (max-width: 640px) {
+      width: min(100vw - 24px, 1520px);
+    }
+  }
 }
 
 .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: $space-md $space-xl;
-  background: $color-surface;
-  border-bottom: 1px solid $color-border;
+  gap: $space-md;
+  width: min(1520px, calc(100vw - 48px));
+  margin: 20px auto 0;
+  padding: 16px 22px;
+  background: rgba(9, 18, 17, 0.82);
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  box-shadow: $shadow-soft;
+  backdrop-filter: blur(18px);
 
-  &__brand {
-    font-weight: 900;
-    font-size: $font-size-lg;
-    color: $color-green;
-    letter-spacing: -0.01em;
+  @media (max-width: 720px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  @media (max-width: 640px) {
+    width: min(100vw - 24px, 1520px);
+    margin-top: 12px;
+    padding: 16px;
+  }
+
+  &__brand-link {
+    color: inherit;
   }
 
   &__right {
     display: flex;
     align-items: center;
     gap: $space-md;
+
+    @media (max-width: 720px) {
+      justify-content: space-between;
+      width: 100%;
+    }
+  }
+
+  &__profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba($color-green-soft, 0.28);
+    background: rgba($color-green, 0.14);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+    flex-shrink: 0;
+  }
+
+  &__avatar--fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: $color-green-soft;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+  }
+
+  &__user-copy {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__user-name {
+    font-weight: 700;
+    color: $color-text;
+  }
+
+  &__user-id {
+    font-size: 12px;
+    color: $color-text-muted;
   }
 
   &__user {

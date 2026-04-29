@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   toggleUpdate,
@@ -41,13 +41,24 @@ export default function DashboardPage() {
   const result = useAppSelector(s => s.scan.result)
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({})
 
-  if (!result) {
-    navigate('/')
-    return null
-  }
+  useEffect(() => {
+    if (!result) {
+      navigate('/')
+    }
+  }, [navigate, result])
+
+  if (!result) return null
 
   const { playlistsToUpdate, newIdeas } = result
   const nothingSelected = selectedUpdateIds.length === 0 && selectedIdeaTags.length === 0
+  const totalUpdateTracks = playlistsToUpdate.reduce((sum, item) => sum + item.tracks.length, 0)
+  const totalIdeaTracks = newIdeas.reduce((sum, item) => sum + item.tracks.length, 0)
+  const selectedTrackCount = playlistsToUpdate
+    .filter(item => selectedUpdateIds.includes(item.playlistId))
+    .reduce((sum, item) => sum + item.tracks.length - (excludedUpdateTrackUris[item.playlistId] ?? []).length, 0)
+    + newIdeas
+      .filter(item => selectedIdeaTags.includes(item.tag))
+      .reduce((sum, item) => sum + item.tracks.length - (excludedIdeaTrackUris[item.tag] ?? []).length, 0)
 
   const handleApply = () => {
     dispatch(applyProposal())
@@ -67,7 +78,8 @@ export default function DashboardPage() {
     return (
       <div className="dashboard">
         <div className="dashboard__summary">
-          <h1 className="dashboard__summary-title">Done!</h1>
+          <p className="dashboard__eyebrow">Execution complete</p>
+          <h1 className="dashboard__summary-title">Your library update is live.</h1>
           <ul className="dashboard__summary-list">
             <li>{summary.playlistsUpdated} playlist(s) updated</li>
             <li>{summary.playlistsCreated} new playlist(s) created</li>
@@ -85,26 +97,53 @@ export default function DashboardPage() {
     <div className="dashboard">
       <header className="dashboard__header">
         <div>
-          <h1 className="dashboard__title">Your Proposal</h1>
+          <p className="dashboard__eyebrow">Proposal review</p>
+          <h1 className="dashboard__title">Shape the final library changes.</h1>
           <p className="dashboard__subtitle">
-            Review the suggested changes and approve what you want.
+            Review every suggested playlist move, then apply only the tracks and playlists you actually want.
           </p>
         </div>
-        <button
-          className="btn btn--primary"
-          onClick={handleApply}
-          disabled={nothingSelected || executing}
-        >
-          {executing ? 'Applying…' : 'Apply Selected'}
-        </button>
+        <div className="dashboard__header-actions">
+          <div className="dashboard__selection-chip">
+            <span className="dashboard__selection-chip-value">{selectedTrackCount}</span>
+            <span className="dashboard__selection-chip-label">selected tracks</span>
+          </div>
+          <button
+            className="btn btn--primary"
+            onClick={handleApply}
+            disabled={nothingSelected || executing}
+          >
+            {executing ? 'Applying…' : 'Apply Selected'}
+          </button>
+        </div>
       </header>
+
+      <div className="dashboard__stats">
+        <div className="dashboard__stat-card">
+          <span className="dashboard__stat-value">{playlistsToUpdate.length}</span>
+          <span className="dashboard__stat-label">existing playlists to update</span>
+        </div>
+        <div className="dashboard__stat-card">
+          <span className="dashboard__stat-value">{newIdeas.length}</span>
+          <span className="dashboard__stat-label">new playlist ideas</span>
+        </div>
+        <div className="dashboard__stat-card">
+          <span className="dashboard__stat-value">{totalUpdateTracks + totalIdeaTracks}</span>
+          <span className="dashboard__stat-label">tracks in this proposal</span>
+        </div>
+      </div>
 
       {error && <p className="error-text">{error}</p>}
 
       <div className="dashboard__panels">
-        {/* Panel A: Playlists to Update */}
         <section className="panel">
-          <h2 className="panel__title">Playlists to Update</h2>
+          <div className="panel__header">
+            <div>
+              <h2 className="panel__title">Playlists to Update</h2>
+              <p className="panel__subtitle">Add strong tag matches into playlists you already own.</p>
+            </div>
+            <span className="pill">{totalUpdateTracks} tracks</span>
+          </div>
           {playlistsToUpdate.length === 0 ? (
             <p className="panel__empty">No matching playlists found.</p>
           ) : (
@@ -194,9 +233,14 @@ export default function DashboardPage() {
           )}
         </section>
 
-        {/* Panel B: New Ideas */}
         <section className="panel">
-          <h2 className="panel__title">New Ideas</h2>
+          <div className="panel__header">
+            <div>
+              <h2 className="panel__title">New Ideas</h2>
+              <p className="panel__subtitle">Create clean, focused playlists from tags that crossed your threshold.</p>
+            </div>
+            <span className="pill">{totalIdeaTracks} tracks</span>
+          </div>
           {newIdeas.length === 0 ? (
             <p className="panel__empty">No new playlists to suggest.</p>
           ) : (

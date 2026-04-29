@@ -1,41 +1,144 @@
 @use '../variables' as *;
 
 .login-page {
+  position: relative;
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
-  background: radial-gradient(ellipse at center, #1a2a1a 0%, $color-bg 70%);
+  gap: 28px;
+  padding: 28px 0;
+  overflow: hidden;
+
+  &__orb {
+    position: absolute;
+    border-radius: 999px;
+    filter: blur(24px);
+    pointer-events: none;
+  }
+
+  &__orb--one {
+    top: 48px;
+    left: -48px;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba($color-green, 0.28), transparent 70%);
+  }
+
+  &__orb--two {
+    bottom: 110px;
+    right: -88px;
+    width: 340px;
+    height: 340px;
+    background: radial-gradient(circle, rgba($color-green-soft, 0.18), transparent 70%);
+  }
+
+  &__shell {
+    position: relative;
+    z-index: 1;
+    width: min(1520px, calc(100vw - 48px));
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 24px;
+
+    @media (max-width: 960px) {
+      grid-template-columns: 1fr;
+    }
+
+    @media (max-width: 640px) {
+      width: min(100vw - 24px, 1520px);
+    }
+  }
 }
 
 .login-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: $space-lg;
   padding: $space-2xl;
-  background: $color-surface;
+  background: rgba(12, 23, 22, 0.88);
   border-radius: $radius-md;
+  border: 1px solid $color-border;
   box-shadow: $shadow-card;
-  max-width: 380px;
-  width: 100%;
-  text-align: center;
+  backdrop-filter: blur(16px);
 
-  &__logo {
-    width: 64px;
-    height: 64px;
-    svg { width: 100%; height: 100%; fill: $color-green; }
+  @media (max-width: 640px) {
+    padding: 24px;
   }
 
-  &__title {
-    font-size: $font-size-2xl;
-    font-weight: 900;
-    letter-spacing: -0.02em;
+  &--intro {
+    justify-content: space-between;
+    min-height: 560px;
   }
 
-  &__subtitle {
+  &--action {
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  &__headline-block {
+    display: flex;
+    flex-direction: column;
+    gap: $space-md;
+    max-width: 720px;
+  }
+
+  &__eyebrow {
+    color: $color-green-soft;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  &__title,
+  &__action-title {
+    font-family: $font-display;
+    font-size: clamp(32px, 4vw, 58px);
+    line-height: 1.02;
+    letter-spacing: -0.05em;
+  }
+
+  &__action-title {
+    font-size: clamp(28px, 3vw, 40px);
+  }
+
+  &__subtitle,
+  &__action-copy,
+  &__legal-note {
     color: $color-text-muted;
-    font-size: $font-size-md;
+    font-size: 16px;
     line-height: 1.5;
+  }
+
+  &__feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+
+    @media (max-width: 760px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__feature {
+    padding: 18px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba($color-green, 0.05));
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 20px;
+    color: $color-text-muted;
+    line-height: 1.55;
+  }
+
+  &__feature-label {
+    display: inline-block;
+    margin-bottom: 10px;
+    color: $color-text;
+    font-weight: 800;
+  }
+
+  &__button {
+    width: 100%;
   }
 }

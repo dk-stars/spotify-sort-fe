@@ -1,13 +1,17 @@
 // ── Palette ───────────────────────────────────────────────────────────────────
-$color-green:      #1DB954;
-$color-green-dark: #158a3e;
-$color-bg:         #121212;
-$color-surface:    #181818;
-$color-elevated:   #282828;
-$color-border:     #3e3e3e;
-$color-text:       #ffffff;
-$color-text-muted: #b3b3b3;
-$color-error:      #f15e6c;
+$color-green:      #1ed760;
+$color-green-dark: #14b84e;
+$color-green-soft: #92f6b2;
+$color-bg:         #081010;
+$color-surface:    rgba(11, 22, 21, 0.86);
+$color-surface-solid: #0c1716;
+$color-elevated:   #122422;
+$color-elevated-strong: #17302d;
+$color-border:     rgba(148, 247, 184, 0.18);
+$color-text:       #f4fbf5;
+$color-text-muted: #9fb8aa;
+$color-error:      #ff7f88;
+$color-warning:    #ffd97a;
 
 // ── Spacing ───────────────────────────────────────────────────────────────────
 $space-xs:  4px;
@@ -18,8 +22,8 @@ $space-xl:  40px;
 $space-2xl: 64px;
 
 // ── Typography ────────────────────────────────────────────────────────────────
-$font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-  Ubuntu, Cantarell, sans-serif;
+$font-family: 'Manrope', 'Avenir Next', 'Helvetica Neue', sans-serif;
+$font-display: 'Sora', 'Manrope', 'Avenir Next', sans-serif;
 $font-size-sm:  13px;
 $font-size-md:  15px;
 $font-size-lg:  18px;
@@ -27,7 +31,9 @@ $font-size-xl:  24px;
 $font-size-2xl: 32px;
 
 // ── Radius / Shadow ───────────────────────────────────────────────────────────
-$radius-sm: 4px;
-$radius-md: 8px;
+$radius-sm: 16px;
+$radius-md: 24px;
+$radius-lg: 32px;
 $radius-full: 9999px;
-$shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5);
+$shadow-card: 0 30px 70px rgba(0, 0, 0, 0.35);
+$shadow-soft: 0 16px 38px rgba(0, 0, 0, 0.2);

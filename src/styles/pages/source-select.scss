@@ -1,31 +1,274 @@
 @use '../variables' as *;
 
 .source-select {
-  max-width: 540px;
-  margin: 0 auto;
-  padding: $space-2xl $space-md;
+  padding: 28px 0 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  &__hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 8px 4px;
+
+    @media (max-width: 960px) {
+      flex-direction: column;
+    }
+  }
+
+  &__eyebrow {
+    color: $color-green-soft;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
 
   &__title {
-    font-size: $font-size-2xl;
-    font-weight: 900;
-    margin-bottom: $space-sm;
+    max-width: 820px;
+    font-family: $font-display;
+    font-size: clamp(32px, 4vw, 56px);
+    line-height: 1.04;
+    letter-spacing: -0.05em;
+    margin-bottom: 12px;
   }
 
   &__subtitle {
     color: $color-text-muted;
-    margin-bottom: $space-xl;
+    max-width: 760px;
+    font-size: 16px;
+    line-height: 1.6;
   }
 
-  &__form {
+  &__hero-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    min-width: 320px;
+
+    @media (max-width: 640px) {
+      min-width: 0;
+      width: 100%;
+    }
+  }
+
+  &__stat-card {
+    padding: 20px;
+    background: rgba(12, 23, 22, 0.82);
+    border: 1px solid $color-border;
+    border-radius: 24px;
+    box-shadow: $shadow-soft;
+  }
+
+  &__stat-value {
+    display: block;
+    font-family: $font-display;
+    font-size: 34px;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  &__stat-label {
+    display: block;
+    color: $color-text-muted;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+    gap: 24px;
+
+    @media (max-width: 1080px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__panel {
+    padding: 28px;
+    background: rgba(12, 23, 22, 0.84);
+    border-radius: $radius-md;
+    border: 1px solid $color-border;
+    box-shadow: $shadow-card;
+    backdrop-filter: blur(16px);
+
+    @media (max-width: 640px) {
+      padding: 20px;
+    }
+  }
+
+  &__panel--controls {
     display: flex;
     flex-direction: column;
-    gap: $space-lg;
+    gap: 18px;
+  }
+
+  &__panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  &__panel-title {
+    font-family: $font-display;
+    font-size: 24px;
+    margin-bottom: 6px;
+  }
+
+  &__panel-copy {
+    color: $color-text-muted;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  &__playlist-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 600px;
+    overflow: auto;
+    padding-right: 4px;
+  }
+
+  &__playlist {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: center;
+    padding: 18px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+
+    input {
+      width: 18px;
+      height: 18px;
+      accent-color: $color-green;
+    }
+
+    &:hover {
+      transform: translateY(-1px);
+      border-color: rgba($color-green-soft, 0.26);
+      background: rgba($color-green, 0.05);
+      box-shadow: $shadow-soft;
+    }
+
+    @media (max-width: 640px) {
+      grid-template-columns: auto 1fr;
+    }
+  }
+
+  &__playlist--selected {
+    border-color: rgba($color-green-soft, 0.34);
+    background: linear-gradient(180deg, rgba($color-green, 0.12), rgba(255, 255, 255, 0.03));
+  }
+
+  &__playlist-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  &__playlist-name-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__playlist-name {
+    font-size: 17px;
+    font-weight: 800;
+  }
+
+  &__playlist-note {
+    color: $color-text-muted;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  &__playlist-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+
+    @media (max-width: 640px) {
+      grid-column: 2;
+      align-items: flex-start;
+    }
+  }
+
+  &__playlist-count {
+    color: $color-green-soft;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  &__setting-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  &__threshold-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 14px;
+    min-height: 36px;
+    border-radius: $radius-full;
+    background: rgba($color-green, 0.12);
+    border: 1px solid rgba($color-green-soft, 0.26);
+    color: $color-green-soft;
+    font-weight: 800;
+  }
+
+  &__selection-summary {
+    padding: 20px;
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba($color-green, 0.1), rgba(255, 255, 255, 0.03));
+    border: 1px solid rgba($color-green-soft, 0.18);
+  }
+
+  &__selection-label {
+    color: $color-green-soft;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  &__selection-name {
+    font-family: $font-display;
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+
+  &__selection-copy {
+    color: $color-text-muted;
+    line-height: 1.55;
+  }
+
+  &__start {
+    width: 100%;
+    margin-top: auto;
   }
 }
 
 .form-group { display: flex; flex-direction: column; gap: $space-sm; }
 
-.form-label { font-size: $font-size-sm; color: $color-text-muted; font-weight: 600; }
+.form-label { font-size: $font-size-sm; color: $color-text-muted; font-weight: 700; }
 
 .form-select {
   background: $color-elevated;
@@ -41,10 +284,10 @@
 .form-range {
   -webkit-appearance: none;
   width: 100%;
-  height: 4px;
-  background: $color-border;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
   border-radius: $radius-full;
   accent-color: $color-green;
 }
 
-.form-hint { font-size: $font-size-sm; color: $color-text-muted; }
+.form-hint { font-size: $font-size-sm; color: $color-text-muted; line-height: 1.6; }

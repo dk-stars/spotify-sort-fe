@@ -3,6 +3,7 @@ export interface AuthUser {
   userId: number
   spotifyId: string
   displayName: string
+  avatarUrl: string
 }
 
 // ── Playlists ─────────────────────────────────────────────────────────────────

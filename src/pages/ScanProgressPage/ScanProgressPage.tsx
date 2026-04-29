@@ -26,6 +26,7 @@ export default function ScanProgressPage() {
     const index = STEP_LABELS.findIndex(step => progressPercent <= step.threshold)
     return index === -1 ? STEP_LABELS.length - 1 : index
   }, [progressPercent])
+  const activeStage = STEP_LABELS[activeStepIndex]?.label ?? STEP_LABELS[STEP_LABELS.length - 1].label
 
   useEffect(() => {
     if (!jobId) {
@@ -69,25 +70,39 @@ export default function ScanProgressPage() {
   return (
     <div className="scan-progress">
       {status === 'FAILED' ? (
-        <>
-          <p className="scan-progress__status scan-progress__status--error">Scan failed</p>
+        <div className="scan-progress__card scan-progress__card--state">
+          <p className="scan-progress__eyebrow">Scan interrupted</p>
+          <h1 className="scan-progress__title">Scan failed</h1>
           {error && <p className="error-text">{error}</p>}
-          <button className="btn btn--ghost" onClick={handleBackHome}>
-            Try again
-          </button>
-        </>
+          <div className="scan-progress__actions">
+            <button className="btn btn--ghost" onClick={handleBackHome}>
+              Try again
+            </button>
+          </div>
+        </div>
       ) : status === 'CANCELLED' ? (
-        <>
-          <p className="scan-progress__status">Scan cancelled</p>
+        <div className="scan-progress__card scan-progress__card--state">
+          <p className="scan-progress__eyebrow">Scan cancelled</p>
+          <h1 className="scan-progress__title">No proposal was generated.</h1>
           <p className="scan-progress__hint">No proposal was generated.</p>
-          <button className="btn btn--ghost" onClick={handleBackHome}>
-            Back to source selection
-          </button>
-        </>
+          <div className="scan-progress__actions">
+            <button className="btn btn--ghost" onClick={handleBackHome}>
+              Back to source selection
+            </button>
+          </div>
+        </div>
       ) : (
         <>
           <div className="scan-progress__card">
-            <div className="scan-progress__eyebrow">Track scan in progress</div>
+            <div className="scan-progress__hero-row">
+              <div>
+                <div className="scan-progress__eyebrow">Track scan in progress</div>
+                <h1 className="scan-progress__title">Building your sorting proposal</h1>
+              </div>
+              <span className="pill pill--accent">
+                Stage {Math.min(activeStepIndex + 1, STEP_LABELS.length)} / {STEP_LABELS.length}
+              </span>
+            </div>
             <p className="scan-progress__status">
               {currentStep || (status === 'PENDING' ? 'Waiting to start…' : 'Analyzing your tracks…')}
             </p>
@@ -100,6 +115,17 @@ export default function ScanProgressPage() {
             <div className="scan-progress__bar-meta">
               <span>{progressPercent}%</span>
               <span>{canceling ? 'Cancellation requested' : status === 'PENDING' ? 'Preparing job' : 'Working through your library'}</span>
+            </div>
+
+            <div className="scan-progress__snapshot-grid">
+              <div className="scan-progress__snapshot-card">
+                <span className="scan-progress__snapshot-label">Active stage</span>
+                <strong>{activeStage}</strong>
+              </div>
+              <div className="scan-progress__snapshot-card">
+                <span className="scan-progress__snapshot-label">Current action</span>
+                <strong>{currentStep || 'Preparing scan'}</strong>
+              </div>
             </div>
 
             <ol className="scan-progress__steps">
@@ -118,7 +144,7 @@ export default function ScanProgressPage() {
               })}
             </ol>
 
-            <p className="scan-progress__hint">This can take a minute on larger playlists because tags are enriched and cached.</p>
+            <p className="scan-progress__hint">This can take a minute on larger playlists because tags are enriched, normalized, and cached before proposal building.</p>
 
             <div className="scan-progress__actions">
               <button className="btn btn--ghost" onClick={handleBackHome}>

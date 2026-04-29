@@ -3,33 +3,57 @@
 
 // ── Shared utilities ──────────────────────────────────────────────────────────
 
+body {
+  background:
+    radial-gradient(circle at top left, rgba($color-green, 0.22), transparent 28%),
+    radial-gradient(circle at 85% 12%, rgba($color-green-soft, 0.12), transparent 24%),
+    linear-gradient(180deg, #0a1312 0%, #081010 100%);
+}
+
+::selection {
+  background: rgba($color-green, 0.32);
+  color: $color-text;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: $space-sm;
-  padding: $space-sm $space-lg;
+  padding: 12px 22px;
   border-radius: $radius-full;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   font-size: $font-size-md;
   font-weight: 700;
   letter-spacing: 0.04em;
-  transition: background 0.15s, opacity 0.15s;
+  line-height: 1;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
 
   &:disabled { opacity: 0.45; cursor: not-allowed; }
+  &:hover:not(:disabled) { transform: translateY(-1px); }
 
   &--primary {
-    background: $color-green;
-    color: #000;
-    &:hover:not(:disabled) { background: $color-green-dark; }
+    background: linear-gradient(135deg, $color-green-soft, $color-green);
+    color: #05110a;
+    box-shadow: 0 18px 38px rgba($color-green, 0.22);
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, #b4fdcb, $color-green-dark);
+      box-shadow: 0 20px 44px rgba($color-green, 0.28);
+    }
   }
 
   &--ghost {
-    background: transparent;
-    color: $color-text-muted;
-    border: 1px solid $color-border;
-    &:hover:not(:disabled) { color: $color-text; border-color: $color-text; }
+    background: rgba(255, 255, 255, 0.02);
+    color: $color-text;
+    border-color: rgba(255, 255, 255, 0.12);
+
+    &:hover:not(:disabled) {
+      color: $color-text;
+      border-color: rgba($color-green-soft, 0.42);
+      background: rgba($color-green, 0.08);
+    }
   }
 
   &--large { padding: $space-md $space-xl; font-size: $font-size-lg; }
@@ -39,9 +63,146 @@
   color: $color-error;
   font-size: $font-size-sm;
   margin-top: $space-sm;
+  padding: $space-sm $space-md;
+  background: rgba($color-error, 0.08);
+  border: 1px solid rgba($color-error, 0.2);
+  border-radius: $radius-sm;
 }
 
 .loading-text {
   color: $color-text-muted;
   font-size: $font-size-sm;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: $radius-full;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: $color-text;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pill--accent {
+  background: rgba($color-green, 0.12);
+  border-color: rgba($color-green-soft, 0.26);
+  color: $color-green-soft;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+
+  &__logo {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    box-shadow: $shadow-soft;
+    flex-shrink: 0;
+  }
+
+  &__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  &__title {
+    font-family: $font-display;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: $color-text;
+  }
+
+  &__subtitle {
+    color: $color-text-muted;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+}
+
+.brand-mark--compact {
+  .brand-mark__logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .brand-mark__title {
+    font-size: 20px;
+  }
+
+  .brand-mark__subtitle {
+    font-size: 12px;
+  }
+}
+
+.app-footer {
+  position: relative;
+  z-index: 1;
+  width: min(1520px, calc(100vw - 48px));
+  margin: 0 auto 28px;
+  padding: 24px 28px;
+  border-radius: $radius-md;
+  background: rgba(12, 22, 21, 0.82);
+  border: 1px solid $color-border;
+  box-shadow: $shadow-soft;
+  backdrop-filter: blur(18px);
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1.4fr 0.9fr;
+    gap: $space-lg;
+
+    @media (max-width: 980px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__title,
+  &__label {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: $color-green-soft;
+    margin-bottom: $space-sm;
+  }
+
+  &__text {
+    color: $color-text-muted;
+    font-size: 13px;
+    line-height: 1.65;
+
+    & + & {
+      margin-top: 8px;
+    }
+  }
+
+  &__links {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    a {
+      color: $color-text;
+      font-weight: 600;
+    }
+  }
+
+  @media (max-width: 640px) {
+    width: min(100vw - 24px, 1520px);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
 }

@@ -1,3 +1,5 @@
+import AppFooter from '../../components/AppFooter'
+import BrandMark from '../../components/BrandMark'
 import '../../styles/pages/login.scss'
 
 export default function LoginPage() {
@@ -8,20 +10,51 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
-      <div className="login-card">
-        <div className="login-card__logo">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
-          </svg>
-        </div>
-        <h1 className="login-card__title">Smart Librarian</h1>
-        <p className="login-card__subtitle">
-          Organize your Spotify library intelligently
-        </p>
-        <button className="btn btn--primary btn--large" onClick={handleLogin}>
-          Connect with Spotify
-        </button>
+      <div className="login-page__orb login-page__orb--one" aria-hidden="true" />
+      <div className="login-page__orb login-page__orb--two" aria-hidden="true" />
+
+      <div className="login-page__shell">
+        <section className="login-card login-card--intro">
+          <BrandMark subtitle="Playlist organization for serious listeners" />
+          <div className="login-card__headline-block">
+            <h1 className="login-card__title">Turn a scattered library into a clean listening system.</h1>
+            <p className="login-card__subtitle">
+              Spotify Sort scans Liked Songs or any owned playlist, enriches tracks with metadata, and proposes human-reviewable playlist changes before anything is written back.
+            </p>
+          </div>
+
+          <div className="login-card__feature-grid">
+            <article className="login-card__feature">
+              <span className="login-card__feature-label">Precise</span>
+              <p>Editable proposals keep you in control of every playlist and track.</p>
+            </article>
+            <article className="login-card__feature">
+              <span className="login-card__feature-label">Fast</span>
+              <p>Cached enrichment keeps repeat scans practical even on larger collections.</p>
+            </article>
+            <article className="login-card__feature">
+              <span className="login-card__feature-label">Transparent</span>
+              <p>Spotify and Last.fm attributions stay visible, because metadata provenance matters.</p>
+            </article>
+          </div>
+        </section>
+
+        <section className="login-card login-card--action">
+          <p className="login-card__eyebrow">Connect your account</p>
+          <h2 className="login-card__action-title">Start with your Spotify identity.</h2>
+          <p className="login-card__action-copy">
+            Sign in to load your playlists, show your Spotify avatar, and generate a proposal from your own library.
+          </p>
+          <button className="btn btn--primary btn--large login-card__button" onClick={handleLogin}>
+            Connect with Spotify
+          </button>
+          <p className="login-card__legal-note">
+            Non-commercial project by sdk.lab studio. Uses the Spotify Web API and Last.fm API.
+          </p>
+        </section>
       </div>
+
+      <AppFooter />
     </div>
   )
 }
