@@ -10,7 +10,14 @@ import { API_BASE_URL } from '../config'
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
-  withCredentials: true, // send session cookie on every request
+})
+
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`
+  }
+  return config
 })
 
 // ── Auth ──────────────────────────────────────────────────────────────────────

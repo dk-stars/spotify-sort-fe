@@ -16,6 +16,7 @@ export const checkAuth = createAsyncThunk('auth/check', async () => {
 
 export const logoutUser = createAsyncThunk('auth/logout', async () => {
   await apiLogout()
+  localStorage.removeItem('token')
 })
 
 const authSlice = createSlice({
