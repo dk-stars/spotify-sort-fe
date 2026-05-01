@@ -134,6 +134,7 @@
     max-height: 600px;
     overflow: auto;
     padding-right: 4px;
+    padding-top: 10px;
   }
 
   &__playlist {
@@ -157,6 +158,29 @@
 
     @media (max-width: 640px) {
       grid-template-columns: auto 1fr;
+    }
+
+    /* Keep the toggle visually centered inside playlist rows and add spacing */
+    .selection-switch {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 16px;
+    }
+
+    &--locked {
+      cursor: default;
+
+      &:hover {
+        transform: none;
+        border-color: rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        box-shadow: none;
+      }
+
+      .selection-switch {
+        cursor: not-allowed;
+        opacity: 0.95;
+      }
     }
   }
 

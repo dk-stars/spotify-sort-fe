@@ -122,32 +122,15 @@ export default function DashboardPage() {
     }
   }, [dispatch, navigate, result, routeJobId, scanJobId])
 
-  if (routeJobId && (loadingSavedProposal || Number(routeJobId) !== scanJobId || !result)) {
-    return (
-      <div className="dashboard">
-        <p className="loading-text">Loading saved proposal…</p>
-      </div>
-    )
-  }
-
-  if (!result) return null
-
-  const { playlistsToUpdate } = result
+  // All hooks must be called before any conditional returns
   const sortedIdeas = useMemo(
-    () => [...result.newIdeas].sort((left, right) => right.tracks.length - left.tracks.length),
-    [result.newIdeas],
+    () => result ? [...result.newIdeas].sort((left, right) => right.tracks.length - left.tracks.length) : [],
+    [result?.newIdeas],
   )
-  const nothingSelected = selectedUpdateIds.length === 0 && selectedIdeaTags.length === 0
-  const totalUpdateTracks = playlistsToUpdate.reduce((sum, item) => sum + item.tracks.length, 0)
-  const totalIdeaTracks = sortedIdeas.reduce((sum, item) => sum + item.tracks.length, 0)
-  const selectedTrackCount = playlistsToUpdate
-    .filter(item => selectedUpdateIds.includes(item.playlistId))
-    .reduce((sum, item) => sum + item.tracks.length - (excludedUpdateTrackUris[item.playlistId] ?? []).length, 0)
-    + sortedIdeas
-      .filter(item => selectedIdeaTags.includes(item.tag))
-      .reduce((sum, item) => sum + item.tracks.length - (excludedIdeaTrackUris[item.tag] ?? []).length, 0)
 
   const selectedTracksForDeletion = useMemo(() => {
+    if (!result) return []
+    const { playlistsToUpdate } = result
     const selectedTracks = new Map<string, { trackName: string; artistNames: string[]; albumImageUrl: string | null | undefined }>()
 
     playlistsToUpdate
@@ -160,7 +143,6 @@ export default function DashboardPage() {
       })
 
     sortedIdeas
-      .filter(item => selectedIdeaTags.includes(item.tag))
       .forEach(item => {
         const excluded = new Set(excludedIdeaTrackUris[item.tag] ?? [])
         item.tracks
@@ -171,7 +153,29 @@ export default function DashboardPage() {
     return [...selectedTracks.entries()]
       .map(([trackUri, details]) => ({ trackUri, ...details }))
       .sort((left, right) => left.trackName.localeCompare(right.trackName))
-  }, [excludedIdeaTrackUris, excludedUpdateTrackUris, playlistsToUpdate, selectedIdeaTags, selectedUpdateIds, sortedIdeas])
+  }, [excludedIdeaTrackUris, excludedUpdateTrackUris, result, selectedIdeaTags, selectedUpdateIds, sortedIdeas])
+
+  // Now safe to use early returns after all hooks are called
+  if (routeJobId && (loadingSavedProposal || Number(routeJobId) !== scanJobId || !result)) {
+    return (
+      <div className="dashboard">
+        <p className="loading-text">Loading saved proposal…</p>
+      </div>
+    )
+  }
+
+  if (!result) return null
+
+  const { playlistsToUpdate } = result
+  const nothingSelected = selectedUpdateIds.length === 0 && selectedIdeaTags.length === 0
+  const totalUpdateTracks = playlistsToUpdate.reduce((sum, item) => sum + item.tracks.length, 0)
+  const totalIdeaTracks = sortedIdeas.reduce((sum, item) => sum + item.tracks.length, 0)
+  const selectedTrackCount = playlistsToUpdate
+    .filter(item => selectedUpdateIds.includes(item.playlistId))
+    .reduce((sum, item) => sum + item.tracks.length - (excludedUpdateTrackUris[item.playlistId] ?? []).length, 0)
+    + sortedIdeas
+      .filter(item => selectedIdeaTags.includes(item.tag))
+      .reduce((sum, item) => sum + item.tracks.length - (excludedIdeaTrackUris[item.tag] ?? []).length, 0)
 
   const handleApply = () => {
     if (deleteFromSources) {
@@ -252,22 +256,6 @@ export default function DashboardPage() {
           <p className="dashboard__subtitle">
             Review every suggested playlist move, then apply only the tracks and playlists you actually want.
           </p>
-          <label className="dashboard__toggle-row">
-            <span className="selection-switch">
-              <input
-                type="checkbox"
-                checked={deleteFromSources}
-                onChange={event => dispatch(setDeleteFromSources(event.target.checked))}
-              />
-              <span className="selection-switch__track">
-                <span className="selection-switch__thumb" />
-              </span>
-            </span>
-            <span className="dashboard__toggle-copy">
-              <span className="dashboard__toggle-title">Delete from original source after applying</span>
-              <span className="dashboard__toggle-hint">Off by default. If enabled, selected tracks are removed from the source libraries used for this scan.</span>
-            </span>
-          </label>
         </div>
         <div className="dashboard__header-actions">
           <div className="dashboard__selection-chip">
@@ -296,6 +284,37 @@ export default function DashboardPage() {
       </div>
 
       {error && <p className="error-text">{error}</p>}
+
+      <div className={`dashboard__delete-zone${deleteFromSources ? ' dashboard__delete-zone--active' : ''}`}>
+        <label className="dashboard__delete-label">
+          <span className="selection-switch">
+            <input
+              type="checkbox"
+              checked={deleteFromSources}
+              onChange={event => dispatch(setDeleteFromSources(event.target.checked))}
+            />
+            <span className="selection-switch__track">
+              <span className="selection-switch__thumb" />
+            </span>
+          </span>
+          <span className="dashboard__delete-copy">
+            <span className="dashboard__delete-title">
+              {deleteFromSources ? '\u26a0\ufe0f Remove tracks from source after applying' : 'Remove tracks from source after applying'}
+            </span>
+            <span className="dashboard__delete-hint">
+              {deleteFromSources
+                ? 'Enabled \u2014 selected tracks will be permanently removed from the source playlists used for this scan.'
+                : 'Off by default. When enabled, selected tracks are removed from the source playlists used for this scan.'}
+            </span>
+          </span>
+        </label>
+        {deleteFromSources && selectedTrackCount > 0 && (
+          <span className="dashboard__delete-count">
+            <span className="dashboard__delete-count-value">{selectedTrackCount}</span>
+            <span className="dashboard__delete-count-label">tracks to remove</span>
+          </span>
+        )}
+      </div>
 
       <div className="dashboard__panels">
         <section className="panel">
@@ -334,13 +353,14 @@ export default function DashboardPage() {
                             </span>
                           </span>
                           <span className="panel__item-copy">
-                            <span className="panel__item-name">{u.playlistName}</span>
+                            <span className="panel__item-name">
+                              {u.playlistName} <span className="panel__item-count-inline">({formatSuggestedCount(includedCount, u.tracks.length)})</span>
+                            </span>
                             <span className="panel__item-hint">{topArtists}</span>
                           </span>
                         </label>
 
                         <div className="panel__item-meta">
-                          <span className="panel__item-count">{formatSuggestedCount(includedCount, u.tracks.length)}</span>
                           <button
                             type="button"
                             className="panel__expand"
@@ -431,13 +451,14 @@ export default function DashboardPage() {
                             </span>
                           </span>
                           <span className="panel__item-copy">
-                            <span className="panel__item-name">{formatPlaylistName(idea.tag)}</span>
+                            <span className="panel__item-name">
+                              {formatPlaylistName(idea.tag)} <span className="panel__item-count-inline">({formatTrackCount(includedCount, idea.tracks.length)})</span>
+                            </span>
                             <span className="panel__item-hint">{topArtists}</span>
                           </span>
                         </label>
 
                         <div className="panel__item-meta">
-                          <span className="panel__item-count">{formatTrackCount(includedCount, idea.tracks.length)}</span>
                           <button
                             type="button"
                             className="panel__expand"

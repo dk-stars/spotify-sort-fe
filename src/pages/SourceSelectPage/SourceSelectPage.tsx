@@ -24,6 +24,8 @@ export default function SourceSelectPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [threshold, setThreshold] = useState<number>(10)
 
+  const isDefaultOnlySelected = selectedIds.length === 1 && selectedIds[0] === LIKED_SONGS_SOURCE_ID
+
   useEffect(() => {
     dispatch(loadPlaylists())
   }, [dispatch])
@@ -100,16 +102,20 @@ export default function SourceSelectPage() {
             <p className="loading-text">Loading playlists…</p>
           ) : (
             <div className="source-select__playlist-list" role="group" aria-label="Source playlists">
-              {items.map(p => (
+              {items.map(p => {
+                const disabledToggle = p.id === LIKED_SONGS_SOURCE_ID && isDefaultOnlySelected
+                return (
                 <label
                   key={p.id}
-                  className={`source-select__playlist${selectedIds.includes(p.id) ? ' source-select__playlist--selected' : ''}`}
+                  className={`source-select__playlist${selectedIds.includes(p.id) ? ' source-select__playlist--selected' : ''}${disabledToggle ? ' source-select__playlist--locked' : ''}`}
+                  aria-disabled={disabledToggle}
                 >
                   <span className="selection-switch">
                     <input
                       type="checkbox"
                       checked={selectedIds.includes(p.id)}
-                      onChange={() => toggleSource(p.id)}
+                      disabled={disabledToggle}
+                      onChange={() => !disabledToggle && toggleSource(p.id)}
                     />
                     <span className="selection-switch__track">
                       <span className="selection-switch__thumb" />
@@ -133,7 +139,8 @@ export default function SourceSelectPage() {
                     {selectedIds.includes(p.id) ? <span className="pill">Selected</span> : null}
                   </span>
                 </label>
-              ))}
+                )
+              })}
             </div>
           )}
 

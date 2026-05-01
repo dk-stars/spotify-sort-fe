@@ -21,10 +21,46 @@
     gap: $space-lg;
     text-align: left;
     backdrop-filter: blur(16px);
+    position: relative;
+    overflow: hidden;
 
     @media (max-width: 640px) {
       padding: $space-lg;
     }
+  }
+
+  &__cancel-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    background: rgba(8, 16, 16, 0.86);
+    backdrop-filter: blur(6px);
+    border-radius: $radius-md;
+  }
+
+  &__cancel-spinner {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 3px solid rgba($color-green-soft, 0.18);
+    border-top-color: $color-green-soft;
+    animation: scan-spin 850ms linear infinite;
+  }
+
+  &__cancel-label {
+    color: $color-text;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  @keyframes scan-spin {
+    to { transform: rotate(360deg); }
   }
 
   &__card--state {

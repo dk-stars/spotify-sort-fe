@@ -148,13 +148,19 @@ export default function ScanProgressPage() {
       ) : (
         <>
           <div className="scan-progress__card">
+            {(canceling || status === 'CANCELLING') && (
+              <div className="scan-progress__cancel-overlay">
+                <div className="scan-progress__cancel-spinner" />
+                <p className="scan-progress__cancel-label">Stopping current step…</p>
+              </div>
+            )}
             <div className="scan-progress__hero-row">
               <div>
                 <div className="scan-progress__eyebrow">Track scan in progress</div>
                 <h1 className="scan-progress__title">Building your sorting proposal</h1>
                 <p className="scan-progress__status">
                   {status === 'CANCELLING'
-                    ? 'Cancellation requested. The current task must finish before the job stops.'
+                    ? 'Cancellation in progress. The current operation will stop shortly.'
                     : status === 'PENDING'
                       ? 'Your scan is queued and about to begin.'
                       : 'Each stage fills as the scan moves through your library.'}

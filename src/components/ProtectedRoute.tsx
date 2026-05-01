@@ -12,7 +12,6 @@ export default function ProtectedRoute({ children }: Props) {
   const { user, loading, checked } = useAppSelector(s => s.auth)
 
   useEffect(() => {
-    console.log('ProtectedRoute: checked=', checked, 'user=', user)
     if (!checked) {
       dispatch(checkAuth())
     }
