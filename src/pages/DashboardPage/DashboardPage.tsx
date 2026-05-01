@@ -143,6 +143,7 @@ export default function DashboardPage() {
       })
 
     sortedIdeas
+      .filter(item => selectedIdeaTags.includes(item.tag))
       .forEach(item => {
         const excluded = new Set(excludedIdeaTrackUris[item.tag] ?? [])
         item.tracks
