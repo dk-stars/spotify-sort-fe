@@ -1,19 +1,29 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import {
   toggleUpdate,
   toggleIdea,
   toggleUpdateTrack,
   toggleIdeaTrack,
+  selectSingleUpdateTrack,
+  selectSingleIdeaTrack,
+  initSelection,
+  restoreSelectionFromExecution,
+  setDeleteFromSources,
   applyProposal,
   resetProposal,
 } from '../../features/proposal/proposalSlice'
-import { resetScan } from '../../features/scan/scanSlice'
+import { fetchScanStatus } from '../../api/apiClient'
+import { hydrateScan, resetScan } from '../../features/scan/scanSlice'
 import { useAppDispatch, useAppSelector } from '../../hooks'
 import '../../styles/pages/dashboard.scss'
 
 function formatTrackCount(selectedCount: number, totalCount: number) {
   return `${selectedCount}/${totalCount} tracks`
+}
+
+function formatSuggestedCount(selectedCount: number, suggestedCount: number) {
+  return `${selectedCount}/${suggestedCount} suggested`
 }
 
 function getTrackSubtitle(artistNames: string[]) {
@@ -47,60 +57,157 @@ function formatPlaylistName(name: string) {
 export default function DashboardPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const { jobId: routeJobId } = useParams()
   const {
     selectedUpdateIds,
     selectedIdeaTags,
     excludedUpdateTrackUris,
     excludedIdeaTrackUris,
     executing,
+    deleteFromSources,
     summary,
     error,
   } =
     useAppSelector(s => s.proposal)
   const result = useAppSelector(s => s.scan.result)
+  const scanJobId = useAppSelector(s => s.scan.jobId)
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({})
+  const [loadingSavedProposal, setLoadingSavedProposal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   useEffect(() => {
-    if (!result) {
-      navigate('/')
+    if (!routeJobId) {
+      if (!result) {
+        navigate('/')
+      }
+      return
     }
-  }, [navigate, result])
+
+    let cancelled = false
+
+    const loadSavedProposal = async () => {
+      setLoadingSavedProposal(true)
+      try {
+        const details = await fetchScanStatus(Number(routeJobId))
+        if (cancelled) return
+
+        if (details.status !== 'DONE' || !details.result) {
+          navigate(`/scan-progress/${routeJobId}`)
+          return
+        }
+
+        dispatch(hydrateScan(details))
+        if (details.executionRequest) {
+          dispatch(restoreSelectionFromExecution({ result: details.result, executionRequest: details.executionRequest }))
+        } else {
+          dispatch(initSelection(details.result))
+        }
+      } catch {
+        if (!cancelled) {
+          navigate('/')
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingSavedProposal(false)
+        }
+      }
+    }
+
+    if (Number(routeJobId) !== scanJobId || !result) {
+      void loadSavedProposal()
+    }
+
+    return () => {
+      cancelled = true
+    }
+  }, [dispatch, navigate, result, routeJobId, scanJobId])
+
+  if (routeJobId && (loadingSavedProposal || Number(routeJobId) !== scanJobId || !result)) {
+    return (
+      <div className="dashboard">
+        <p className="loading-text">Loading saved proposal…</p>
+      </div>
+    )
+  }
 
   if (!result) return null
 
-  const { playlistsToUpdate, newIdeas } = result
+  const { playlistsToUpdate } = result
+  const sortedIdeas = useMemo(
+    () => [...result.newIdeas].sort((left, right) => right.tracks.length - left.tracks.length),
+    [result.newIdeas],
+  )
   const nothingSelected = selectedUpdateIds.length === 0 && selectedIdeaTags.length === 0
   const totalUpdateTracks = playlistsToUpdate.reduce((sum, item) => sum + item.tracks.length, 0)
-  const totalIdeaTracks = newIdeas.reduce((sum, item) => sum + item.tracks.length, 0)
+  const totalIdeaTracks = sortedIdeas.reduce((sum, item) => sum + item.tracks.length, 0)
   const selectedTrackCount = playlistsToUpdate
     .filter(item => selectedUpdateIds.includes(item.playlistId))
     .reduce((sum, item) => sum + item.tracks.length - (excludedUpdateTrackUris[item.playlistId] ?? []).length, 0)
-    + newIdeas
+    + sortedIdeas
       .filter(item => selectedIdeaTags.includes(item.tag))
       .reduce((sum, item) => sum + item.tracks.length - (excludedIdeaTrackUris[item.tag] ?? []).length, 0)
 
+  const selectedTracksForDeletion = useMemo(() => {
+    const selectedTracks = new Map<string, { trackName: string; artistNames: string[]; albumImageUrl: string | null | undefined }>()
+
+    playlistsToUpdate
+      .filter(item => selectedUpdateIds.includes(item.playlistId))
+      .forEach(item => {
+        const excluded = new Set(excludedUpdateTrackUris[item.playlistId] ?? [])
+        item.tracks
+          .filter(track => !excluded.has(track.trackUri))
+          .forEach(track => selectedTracks.set(track.trackUri, { trackName: track.trackName, artistNames: track.artistNames, albumImageUrl: track.albumImageUrl }))
+      })
+
+    sortedIdeas
+      .filter(item => selectedIdeaTags.includes(item.tag))
+      .forEach(item => {
+        const excluded = new Set(excludedIdeaTrackUris[item.tag] ?? [])
+        item.tracks
+          .filter(track => !excluded.has(track.trackUri))
+          .forEach(track => selectedTracks.set(track.trackUri, { trackName: track.trackName, artistNames: track.artistNames, albumImageUrl: track.albumImageUrl }))
+      })
+
+    return [...selectedTracks.entries()]
+      .map(([trackUri, details]) => ({ trackUri, ...details }))
+      .sort((left, right) => left.trackName.localeCompare(right.trackName))
+  }, [excludedIdeaTrackUris, excludedUpdateTrackUris, playlistsToUpdate, selectedIdeaTags, selectedUpdateIds, sortedIdeas])
+
   const handleApply = () => {
+    if (deleteFromSources) {
+      setShowDeleteModal(true)
+      return
+    }
     dispatch(applyProposal())
   }
 
-  const handleUpdateTrackToggle = (playlistId: string, trackUri: string, isPlaylistSelected: boolean, isTrackSelected: boolean) => {
+  const handleConfirmDeleteApply = () => {
+    setShowDeleteModal(false)
+    dispatch(applyProposal())
+  }
+
+  const handleUpdateTrackToggle = (
+    playlistId: string,
+    trackUri: string,
+    trackUris: string[],
+    isPlaylistSelected: boolean,
+  ) => {
     if (!isPlaylistSelected) {
-      dispatch(toggleUpdate(playlistId))
-      if (!isTrackSelected) {
-        dispatch(toggleUpdateTrack({ playlistId, trackUri }))
-      }
+      dispatch(selectSingleUpdateTrack({ groupKey: playlistId, trackUri, allTrackUris: trackUris }))
       return
     }
 
     dispatch(toggleUpdateTrack({ playlistId, trackUri }))
   }
 
-  const handleIdeaTrackToggle = (tag: string, trackUri: string, isPlaylistSelected: boolean, isTrackSelected: boolean) => {
+  const handleIdeaTrackToggle = (
+    tag: string,
+    trackUri: string,
+    trackUris: string[],
+    isPlaylistSelected: boolean,
+  ) => {
     if (!isPlaylistSelected) {
-      dispatch(toggleIdea(tag))
-      if (!isTrackSelected) {
-        dispatch(toggleIdeaTrack({ tag, trackUri }))
-      }
+      dispatch(selectSingleIdeaTrack({ groupKey: tag, trackUri, allTrackUris: trackUris }))
       return
     }
 
@@ -145,17 +252,29 @@ export default function DashboardPage() {
           <p className="dashboard__subtitle">
             Review every suggested playlist move, then apply only the tracks and playlists you actually want.
           </p>
+          <label className="dashboard__toggle-row">
+            <span className="selection-switch">
+              <input
+                type="checkbox"
+                checked={deleteFromSources}
+                onChange={event => dispatch(setDeleteFromSources(event.target.checked))}
+              />
+              <span className="selection-switch__track">
+                <span className="selection-switch__thumb" />
+              </span>
+            </span>
+            <span className="dashboard__toggle-copy">
+              <span className="dashboard__toggle-title">Delete from original source after applying</span>
+              <span className="dashboard__toggle-hint">Off by default. If enabled, selected tracks are removed from the source libraries used for this scan.</span>
+            </span>
+          </label>
         </div>
         <div className="dashboard__header-actions">
           <div className="dashboard__selection-chip">
             <span className="dashboard__selection-chip-value">{selectedTrackCount}</span>
             <span className="dashboard__selection-chip-label">selected tracks</span>
           </div>
-          <button
-            className="btn btn--primary"
-            onClick={handleApply}
-            disabled={nothingSelected || executing}
-          >
+          <button className="btn btn--primary" onClick={handleApply} disabled={nothingSelected || executing}>
             {executing ? 'Applying…' : 'Apply Selected'}
           </button>
         </div>
@@ -167,7 +286,7 @@ export default function DashboardPage() {
           <span className="dashboard__stat-label">existing playlists to update</span>
         </div>
         <div className="dashboard__stat-card">
-          <span className="dashboard__stat-value">{newIdeas.length}</span>
+          <span className="dashboard__stat-value">{sortedIdeas.length}</span>
           <span className="dashboard__stat-label">new playlist ideas</span>
         </div>
         <div className="dashboard__stat-card">
@@ -221,7 +340,7 @@ export default function DashboardPage() {
                         </label>
 
                         <div className="panel__item-meta">
-                          <span className="panel__item-count">{formatTrackCount(includedCount, u.totalTracks)}</span>
+                          <span className="panel__item-count">{formatSuggestedCount(includedCount, u.tracks.length)}</span>
                           <button
                             type="button"
                             className="panel__expand"
@@ -244,7 +363,7 @@ export default function DashboardPage() {
                                   <input
                                     type="checkbox"
                                     checked={isSelected && isTrackSelected}
-                                    onChange={() => handleUpdateTrackToggle(u.playlistId, track.trackUri, isSelected, isTrackSelected)}
+                                      onChange={() => handleUpdateTrackToggle(u.playlistId, track.trackUri, u.tracks.map(item => item.trackUri), isSelected)}
                                   />
                                   {track.albumImageUrl ? (
                                     <img
@@ -284,11 +403,11 @@ export default function DashboardPage() {
             </div>
             <span className="pill">{totalIdeaTracks} tracks</span>
           </div>
-          {newIdeas.length === 0 ? (
+          {sortedIdeas.length === 0 ? (
             <p className="panel__empty">No new playlists to suggest.</p>
           ) : (
             <ul className="panel__list">
-              {newIdeas.map(idea => (
+              {sortedIdeas.map(idea => (
                 (() => {
                   const cardKey = `idea:${idea.tag}`
                   const isSelected = selectedIdeaTags.includes(idea.tag)
@@ -341,7 +460,7 @@ export default function DashboardPage() {
                                   <input
                                     type="checkbox"
                                     checked={isSelected && isTrackSelected}
-                                    onChange={() => handleIdeaTrackToggle(idea.tag, track.trackUri, isSelected, isTrackSelected)}
+                                      onChange={() => handleIdeaTrackToggle(idea.tag, track.trackUri, idea.tracks.map(item => item.trackUri), isSelected)}
                                   />
                                   {track.albumImageUrl ? (
                                     <img
@@ -374,11 +493,60 @@ export default function DashboardPage() {
         </section>
       </div>
 
-      <footer className="dashboard__footer">
-        <button className="btn btn--ghost" onClick={handleReset}>
-          Start over
+      <nav className="dashboard__nav-back">
+        <button
+          className="dashboard__back-button"
+          onClick={handleReset}
+          aria-label="Back to selection"
+          title="Back to source selection"
+        >
+          <span className="dashboard__back-icon">‹</span>
         </button>
-      </footer>
+      </nav>
+
+      <footer className="dashboard__footer" />
+
+      {showDeleteModal ? (
+        <div className="dashboard__modal-backdrop" role="presentation" onClick={() => setShowDeleteModal(false)}>
+          <div className="dashboard__modal" role="dialog" aria-modal="true" aria-labelledby="delete-source-modal-title" onClick={event => event.stopPropagation()}>
+            <p className="dashboard__eyebrow">Source cleanup</p>
+            <h2 id="delete-source-modal-title" className="dashboard__modal-title">Delete {selectedTracksForDeletion.length} selected track{selectedTracksForDeletion.length === 1 ? '' : 's'} from the source libraries?</h2>
+            <p className="dashboard__modal-copy">
+              After the playlists are updated, these same tracks will be removed from the sources used to build this scan. You can restore them later with Undo from scan history.
+            </p>
+            <ul className="dashboard__modal-list">
+              {selectedTracksForDeletion.map(track => (
+                <li key={track.trackUri} className="dashboard__modal-item">
+                  {track.albumImageUrl ? (
+                    <img
+                      className="dashboard__modal-item-image"
+                      src={track.albumImageUrl}
+                      alt=""
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span className="dashboard__modal-item-image dashboard__modal-item-image--placeholder" aria-hidden="true">
+                      {track.trackName.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                  <div className="dashboard__modal-item-content">
+                    <span className="dashboard__modal-item-title">{track.trackName}</span>
+                    <span className="dashboard__modal-item-copy">{getTrackSubtitle(track.artistNames)}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="dashboard__modal-actions">
+              <button className="btn btn--ghost" onClick={() => setShowDeleteModal(false)}>
+                Cancel
+              </button>
+              <button className="btn btn--danger" onClick={handleConfirmDeleteApply}>
+                Delete {selectedTracksForDeletion.length} Track{selectedTracksForDeletion.length === 1 ? '' : 's'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

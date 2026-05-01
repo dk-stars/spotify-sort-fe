@@ -56,6 +56,17 @@ body {
     }
   }
 
+  &--danger {
+    background: linear-gradient(135deg, #ff8a8a, #ff5050);
+    color: #220707;
+    box-shadow: 0 18px 38px rgba(255, 80, 80, 0.24);
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, #ff9f9f, #ff6262);
+      box-shadow: 0 20px 44px rgba(255, 80, 80, 0.3);
+    }
+  }
+
   &--large { padding: $space-md $space-xl; font-size: $font-size-lg; }
 }
 

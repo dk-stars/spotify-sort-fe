@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit'
 import { executeProposal } from '../../api/apiClient'
-import type { ExecuteSummary, SyncSuggestResult } from '../../types'
+import type { ExecuteRequest, ExecuteSummary, SyncSuggestResult } from '../../types'
 
 interface ProposalState {
   // Sets of keys the user has checked
@@ -9,8 +9,15 @@ interface ProposalState {
   excludedUpdateTrackUris: Record<string, string[]>
   excludedIdeaTrackUris: Record<string, string[]>
   executing: boolean
+  deleteFromSources: boolean
   summary: ExecuteSummary | null
   error: string | null
+}
+
+interface SelectSingleTrackPayload {
+  groupKey: string
+  trackUri: string
+  allTrackUris: string[]
 }
 
 const initialState: ProposalState = {
@@ -19,6 +26,7 @@ const initialState: ProposalState = {
   excludedUpdateTrackUris: {},
   excludedIdeaTrackUris: {},
   executing: false,
+  deleteFromSources: false,
   summary: null,
   error: null,
 }
@@ -58,7 +66,12 @@ export const applyProposal = createAsyncThunk(
       }))
       .filter(i => i.trackUris.length > 0)
 
-    return await executeProposal({ updates, creates })
+    return await executeProposal({
+      scanJobId: scan.jobId,
+      deleteFromSources: proposal.deleteFromSources,
+      updates,
+      creates,
+    })
   },
 )
 
@@ -67,6 +80,22 @@ function toggleTrackUri(stateMap: Record<string, string[]>, groupKey: string, tr
   stateMap[groupKey] = current.includes(trackUri)
     ? current.filter(uri => uri !== trackUri)
     : [...current, trackUri]
+}
+
+function selectOnlyTrack(stateMap: Record<string, string[]>, groupKey: string, trackUri: string, allTrackUris: string[]) {
+  stateMap[groupKey] = allTrackUris.filter(uri => uri !== trackUri)
+}
+
+function buildExcludedTrackMap<GroupKey extends string>(
+  entries: { key: GroupKey; allTrackUris: string[] }[],
+  selectedTrackUrisByGroup: Record<GroupKey, Set<string>>,
+) {
+  return Object.fromEntries(
+    entries.map(entry => [
+      entry.key,
+      entry.allTrackUris.filter(trackUri => !selectedTrackUrisByGroup[entry.key]?.has(trackUri)),
+    ]),
+  ) as Record<GroupKey, string[]>
 }
 
 const proposalSlice = createSlice({
@@ -79,6 +108,7 @@ const proposalSlice = createSlice({
         state.selectedUpdateIds = state.selectedUpdateIds.filter(x => x !== id)
       } else {
         state.selectedUpdateIds.push(id)
+        state.excludedUpdateTrackUris[id] = []
       }
     },
     toggleIdea: (state, action: PayloadAction<string>) => {
@@ -87,6 +117,7 @@ const proposalSlice = createSlice({
         state.selectedIdeaTags = state.selectedIdeaTags.filter(x => x !== tag)
       } else {
         state.selectedIdeaTags.push(tag)
+        state.excludedIdeaTrackUris[tag] = []
       }
     },
     toggleUpdateTrack: (
@@ -109,6 +140,56 @@ const proposalSlice = createSlice({
         action.payload.trackUri,
       )
     },
+    selectSingleUpdateTrack: (state, action: PayloadAction<SelectSingleTrackPayload>) => {
+      const { groupKey, trackUri, allTrackUris } = action.payload
+      if (!state.selectedUpdateIds.includes(groupKey)) {
+        state.selectedUpdateIds.push(groupKey)
+      }
+      selectOnlyTrack(state.excludedUpdateTrackUris, groupKey, trackUri, allTrackUris)
+    },
+    selectSingleIdeaTrack: (state, action: PayloadAction<SelectSingleTrackPayload>) => {
+      const { groupKey, trackUri, allTrackUris } = action.payload
+      if (!state.selectedIdeaTags.includes(groupKey)) {
+        state.selectedIdeaTags.push(groupKey)
+      }
+      selectOnlyTrack(state.excludedIdeaTrackUris, groupKey, trackUri, allTrackUris)
+    },
+    setDeleteFromSources: (state, action: PayloadAction<boolean>) => {
+      state.deleteFromSources = action.payload
+    },
+    restoreSelectionFromExecution: (
+      state,
+      action: PayloadAction<{ result: SyncSuggestResult; executionRequest: ExecuteRequest }>,
+    ) => {
+      const { result, executionRequest } = action.payload
+      const updateTrackUris = Object.fromEntries(
+        executionRequest.updates.map(update => [update.playlistId, new Set(update.trackUris)]),
+      ) as Record<string, Set<string>>
+      const ideaTrackUris = Object.fromEntries(
+        executionRequest.creates.map(create => [create.playlistName, new Set(create.trackUris)]),
+      ) as Record<string, Set<string>>
+
+      state.selectedUpdateIds = executionRequest.updates.map(update => update.playlistId)
+      state.selectedIdeaTags = executionRequest.creates.map(create => create.playlistName)
+      state.excludedUpdateTrackUris = buildExcludedTrackMap(
+        result.playlistsToUpdate.map(update => ({
+          key: update.playlistId,
+          allTrackUris: update.tracks.map(track => track.trackUri),
+        })),
+        updateTrackUris,
+      )
+      state.excludedIdeaTrackUris = buildExcludedTrackMap(
+        result.newIdeas.map(idea => ({
+          key: idea.tag,
+          allTrackUris: idea.tracks.map(track => track.trackUri),
+        })),
+        ideaTrackUris,
+      )
+      state.deleteFromSources = executionRequest.deleteFromSources ?? false
+      state.summary = null
+      state.error = null
+      state.executing = false
+    },
     resetProposal: () => initialState,
   },
   extraReducers: builder => {
@@ -118,6 +199,7 @@ const proposalSlice = createSlice({
         state.selectedIdeaTags = []
         state.excludedUpdateTrackUris = {}
         state.excludedIdeaTrackUris = {}
+        state.deleteFromSources = false
         state.summary = null
         state.error = null
       })
@@ -141,6 +223,10 @@ export const {
   toggleIdea,
   toggleUpdateTrack,
   toggleIdeaTrack,
+  selectSingleUpdateTrack,
+  selectSingleIdeaTrack,
+  setDeleteFromSources,
+  restoreSelectionFromExecution,
   resetProposal,
 } = proposalSlice.actions
 export default proposalSlice.reducer

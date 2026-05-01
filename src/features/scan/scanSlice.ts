@@ -1,6 +1,6 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit'
 import { startScan, fetchScanStatus, cancelScan } from '../../api/apiClient'
-import type { ScanStatus, SyncSuggestResult } from '../../types'
+import type { ScanStatus, ScanStatusResponse, SyncSuggestResult } from '../../types'
 
 interface ScanState {
   jobId: number | null
@@ -34,8 +34,8 @@ const initialState: ScanState = {
 
 export const submitScan = createAsyncThunk(
   'scan/submit',
-  async ({ sourcePlaylistId, threshold }: { sourcePlaylistId: string; threshold: number }) => {
-    return await startScan(sourcePlaylistId, threshold)
+  async ({ sourcePlaylistIds, threshold }: { sourcePlaylistIds: string[]; threshold: number }) => {
+    return await startScan(sourcePlaylistIds, threshold)
   },
 )
 
@@ -53,11 +53,29 @@ export const requestScanCancel = createAsyncThunk(
   },
 )
 
+function applyScanStatus(state: ScanState, payload: ScanStatusResponse) {
+  state.jobId = payload.jobId
+  state.status = payload.status
+  state.result = payload.result
+  state.currentStep = payload.currentStep
+  state.progressPercent = payload.progressPercent
+  state.currentItem = payload.currentItem
+  state.totalItems = payload.totalItems
+  state.currentFetchRequest = payload.currentFetchRequest
+  state.totalFetchRequests = payload.totalFetchRequests
+  state.error = payload.error
+}
+
 const scanSlice = createSlice({
   name: 'scan',
   initialState,
   reducers: {
     resetScan: () => initialState,
+    hydrateScan: (state, action: PayloadAction<ScanStatusResponse>) => {
+      state.loading = false
+      state.canceling = false
+      applyScanStatus(state, action.payload)
+    },
   },
   extraReducers: builder => {
     builder
@@ -82,23 +100,16 @@ const scanSlice = createSlice({
         state.error = action.error.message ?? 'Failed to start scan'
       })
       .addCase(pollScan.fulfilled, (state, action) => {
-        state.status = action.payload.status
-        state.result = action.payload.result
-        state.currentStep = action.payload.currentStep
-        state.progressPercent = action.payload.progressPercent
-        state.currentItem = action.payload.currentItem
-        state.totalItems = action.payload.totalItems
-        state.currentFetchRequest = action.payload.currentFetchRequest
-        state.totalFetchRequests = action.payload.totalFetchRequests
+        applyScanStatus(state, action.payload)
         if (action.payload.status === 'CANCELLED') {
           state.canceling = false
         }
-        if (action.payload.error) state.error = action.payload.error
       })
       .addCase(requestScanCancel.pending, state => {
         state.canceling = true
       })
       .addCase(requestScanCancel.fulfilled, state => {
+        state.status = 'CANCELLING'
         state.currentStep = 'Cancelling scan…'
       })
       .addCase(requestScanCancel.rejected, (state, action) => {
@@ -108,5 +119,5 @@ const scanSlice = createSlice({
   },
 })
 
-export const { resetScan } = scanSlice.actions
+export const { resetScan, hydrateScan } = scanSlice.actions
 export default scanSlice.reducer

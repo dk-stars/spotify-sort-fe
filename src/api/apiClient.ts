@@ -2,6 +2,7 @@ import axios from 'axios'
 import type {
   AuthUser,
   PlaylistSummary,
+  ScanHistoryItem,
   ScanStatusResponse,
   ExecuteRequest,
   ExecuteSummary,
@@ -33,13 +34,16 @@ export const fetchPlaylists = (): Promise<PlaylistSummary[]> =>
 
 // ── Scan ──────────────────────────────────────────────────────────────────────
 export const startScan = (
-  sourcePlaylistId: string,
+  sourcePlaylistIds: string[],
   threshold: number,
 ): Promise<{ jobId: number }> =>
-  api.post<{ jobId: number }>('/scan', { sourcePlaylistId, threshold }).then(r => r.data)
+  api.post<{ jobId: number }>('/scan', { sourcePlaylistIds, threshold }).then(r => r.data)
 
 export const fetchScanStatus = (jobId: number): Promise<ScanStatusResponse> =>
   api.get<ScanStatusResponse>(`/scan/${jobId}`).then(r => r.data)
+
+export const fetchScanHistory = (): Promise<ScanHistoryItem[]> =>
+  api.get<ScanHistoryItem[]>('/scan/history').then(r => r.data)
 
 export const cancelScan = (jobId: number): Promise<{ jobId: number; status: string }> =>
   api.post<{ jobId: number; status: string }>(`/scan/${jobId}/cancel`).then(r => r.data)
@@ -47,3 +51,6 @@ export const cancelScan = (jobId: number): Promise<{ jobId: number; status: stri
 // ── Proposal ──────────────────────────────────────────────────────────────────
 export const executeProposal = (body: ExecuteRequest): Promise<ExecuteSummary> =>
   api.post<ExecuteSummary>('/proposal/execute', body).then(r => r.data)
+
+export const undoProposal = (jobId: number): Promise<void> =>
+  api.post(`/proposal/${jobId}/undo`).then(() => undefined)

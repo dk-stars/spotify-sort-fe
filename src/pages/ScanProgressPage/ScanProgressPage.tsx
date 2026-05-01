@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { pollScan, requestScanCancel, resetScan } from '../../features/scan/scanSlice'
 import { resetProposal } from '../../features/proposal/proposalSlice'
 import { initSelection } from '../../features/proposal/proposalSlice'
@@ -19,50 +19,82 @@ const STEP_LABELS = [
 export default function ScanProgressPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const routeJobId = useParams().jobId
   const {
     jobId,
     status,
     error,
-    currentStep,
     progressPercent,
     currentItem,
     totalItems,
-    currentFetchRequest,
-    totalFetchRequests,
     canceling,
   } = useAppSelector(s => s.scan)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const activeJobId = routeJobId ? Number(routeJobId) : jobId
 
   const activeStepIndex = useMemo(() => {
     const index = STEP_LABELS.findIndex(step => progressPercent <= step.threshold)
     return index === -1 ? STEP_LABELS.length - 1 : index
   }, [progressPercent])
-  const activeStage = STEP_LABELS[activeStepIndex]?.label ?? STEP_LABELS[STEP_LABELS.length - 1].label
   const hasItemProgress = totalItems > 0
-  const itemProgressLabel = hasItemProgress ? `${currentItem}/${totalItems} tracks` : 'Preparing track iteration'
-  const hasFetchProgress = totalFetchRequests > 0
-  const fetchProgressPercent = hasFetchProgress ? Math.round((currentFetchRequest / totalFetchRequests) * 100) : 0
-  const fetchProgressLabel = hasFetchProgress
-    ? `${currentFetchRequest}/${totalFetchRequests} requests`
-    : 'Waiting for first track request'
+  const itemProgressLabel = hasItemProgress ? `${currentItem}/${totalItems} tracks` : null
+
+  const getStepProgress = (index: number) => {
+    const start = index === 0 ? 0 : STEP_LABELS[index - 1].threshold
+    const end = STEP_LABELS[index].threshold
+    const active = index === activeStepIndex
+
+    if (progressPercent >= end) return 100
+    if (progressPercent <= start) return 0
+
+    // For active Tracks or Tags step with item progress, show item-level progress
+    if (active && hasItemProgress && (STEP_LABELS[index].label === 'Tracks' || STEP_LABELS[index].label === 'Tags')) {
+      return Math.round((currentItem / totalItems) * 100)
+    }
+
+    return Math.max(8, Math.round(((progressPercent - start) / (end - start)) * 100))
+  }
+
+  const getStepMeta = (label: string, index: number) => {
+    const complete = index < activeStepIndex || progressPercent >= STEP_LABELS[index].threshold
+    const active = index === activeStepIndex
+
+    if ((label === 'Tracks' || label === 'Tags') && active && itemProgressLabel) {
+      return itemProgressLabel
+    }
+    if (complete) {
+      return 'Done'
+    }
+    if (active) {
+      if (status === 'CANCELLING') return 'Cancelling'
+      if (label === 'Queue') return 'Queued'
+      if (label === 'Playlists') return 'Matching playlists'
+      if (label === 'Proposal') return 'Finalizing'
+      return 'In progress'
+    }
+    return 'Pending'
+  }
 
   useEffect(() => {
-    if (!jobId) {
+    if (!activeJobId || Number.isNaN(activeJobId)) {
       navigate('/')
       return
     }
 
     const poll = async () => {
-      const result = await dispatch(pollScan(jobId))
+      const result = await dispatch(pollScan(activeJobId))
       if (pollScan.fulfilled.match(result)) {
         const { status: nextStatus, result: scanResult } = result.payload
         if (nextStatus === 'DONE' && scanResult) {
           clearInterval(intervalRef.current!)
           await dispatch(initSelection(scanResult))
-          navigate('/dashboard')
+          navigate(`/dashboard/${activeJobId}`)
         } else if (nextStatus === 'FAILED' || nextStatus === 'CANCELLED') {
           clearInterval(intervalRef.current!)
         }
+      } else if (pollScan.rejected.match(result)) {
+        clearInterval(intervalRef.current!)
+        navigate('/')
       }
     }
 
@@ -72,17 +104,21 @@ export default function ScanProgressPage() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [jobId, dispatch, navigate])
+  }, [activeJobId, dispatch, navigate])
 
   const handleCancel = async () => {
-    if (!jobId || canceling || status === 'CANCELLED' || status === 'DONE') return
-    await dispatch(requestScanCancel(jobId))
+    if (!activeJobId || canceling || status === 'CANCELLING' || status === 'CANCELLED' || status === 'DONE') return
+    await dispatch(requestScanCancel(activeJobId))
   }
 
   const handleBackHome = () => {
     dispatch(resetProposal())
     dispatch(resetScan())
     navigate('/')
+  }
+
+  const handleLeavePage = () => {
+    navigate('/history')
   }
 
   return (
@@ -116,63 +152,19 @@ export default function ScanProgressPage() {
               <div>
                 <div className="scan-progress__eyebrow">Track scan in progress</div>
                 <h1 className="scan-progress__title">Building your sorting proposal</h1>
-              </div>
-              <span className="pill pill--accent">
-                Stage {Math.min(activeStepIndex + 1, STEP_LABELS.length)} / {STEP_LABELS.length}
-              </span>
-            </div>
-            <p className="scan-progress__status">
-              {currentStep || (status === 'PENDING' ? 'Waiting to start…' : 'Analyzing your tracks…')}
-            </p>
-
-            <div className="scan-progress__subsection">
-              <div className="scan-progress__subsection-head">
-                <span className="scan-progress__subsection-title">Track fetch API requests</span>
-                <span className="scan-progress__subsection-meta">{fetchProgressLabel}</span>
-              </div>
-              <div className="scan-progress__bar scan-progress__bar--fetch" aria-label="Track fetch request progress">
-                <div
-                  className="scan-progress__bar-fill scan-progress__bar-fill--fetch"
-                  style={{ width: `${Math.max(fetchProgressPercent, hasFetchProgress ? 8 : 4)}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="scan-progress__bar" aria-label="Scan progress">
-              <div
-                className="scan-progress__bar-fill"
-                style={{ width: `${Math.max(progressPercent, status === 'PENDING' ? 4 : 8)}%` }}
-              />
-            </div>
-            <div className="scan-progress__bar-meta">
-              <span>{progressPercent}%</span>
-              <span>
-                {canceling
-                  ? 'Cancellation requested'
-                  : hasItemProgress
-                    ? itemProgressLabel
+                <p className="scan-progress__status">
+                  {status === 'CANCELLING'
+                    ? 'Cancellation requested. The current task must finish before the job stops.'
                     : status === 'PENDING'
-                      ? 'Preparing job'
-                      : 'Working through your library'}
-              </span>
-            </div>
-
-            <div className="scan-progress__snapshot-grid">
-              <div className="scan-progress__snapshot-card">
-                <span className="scan-progress__snapshot-label">Active stage</span>
-                <strong>{activeStage}</strong>
+                      ? 'Your scan is queued and about to begin.'
+                      : 'Each stage fills as the scan moves through your library.'}
+                </p>
               </div>
-              <div className="scan-progress__snapshot-card">
-                <span className="scan-progress__snapshot-label">Current action</span>
-                <strong>{currentStep || 'Preparing scan'}</strong>
-              </div>
-              <div className="scan-progress__snapshot-card">
-                <span className="scan-progress__snapshot-label">Track iteration</span>
-                <strong>{itemProgressLabel}</strong>
-              </div>
-              <div className="scan-progress__snapshot-card">
-                <span className="scan-progress__snapshot-label">Fetch requests</span>
-                <strong>{fetchProgressLabel}</strong>
+              <div className="scan-progress__counter">
+                <span className="scan-progress__counter-value">{itemProgressLabel ?? `${progressPercent}%`}</span>
+                <span className="scan-progress__counter-label">
+                  {itemProgressLabel ? 'current step progress' : 'overall progress'}
+                </span>
               </div>
             </div>
 
@@ -185,8 +177,14 @@ export default function ScanProgressPage() {
                     key={step.label}
                     className={`scan-progress__step${complete ? ' scan-progress__step--complete' : ''}${active ? ' scan-progress__step--active' : ''}`}
                   >
-                    <span className="scan-progress__step-dot" />
-                    <span>{step.label}</span>
+                    <div className="scan-progress__step-fill" style={{ width: `${complete ? 100 : getStepProgress(index)}%` }} />
+                    <div className="scan-progress__step-shell">
+                      <div className="scan-progress__step-head">
+                        <span className="scan-progress__step-dot" />
+                        <span>{step.label}</span>
+                      </div>
+                      <span className="scan-progress__step-meta">{getStepMeta(step.label, index)}</span>
+                    </div>
                   </li>
                 )
               })}
@@ -195,13 +193,13 @@ export default function ScanProgressPage() {
             <p className="scan-progress__hint">This can take a minute on larger playlists because tags are enriched, normalized, and cached before proposal building.</p>
 
             <div className="scan-progress__actions">
-              <button className="btn btn--ghost" onClick={handleBackHome}>
+              <button className="btn btn--ghost" onClick={handleLeavePage}>
                 Leave page
               </button>
               <button
                 className="btn btn--primary"
                 onClick={handleCancel}
-                disabled={canceling}
+                disabled={canceling || status === 'CANCELLING'}
               >
                 {canceling ? 'Cancelling…' : 'Cancel scan'}
               </button>

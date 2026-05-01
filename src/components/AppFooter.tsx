@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 export default function AppFooter() {
   return (
     <footer className="app-footer">
@@ -25,6 +27,7 @@ export default function AppFooter() {
         <div>
           <p className="app-footer__label">Reference terms</p>
           <div className="app-footer__links">
+            <Link to="/updates">Product updates</Link>
             <a href="https://developer.spotify.com/terms" target="_blank" rel="noreferrer">
               Spotify Developer Terms
             </a>

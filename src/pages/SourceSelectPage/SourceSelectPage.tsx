@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { loadPlaylists } from '../../features/playlists/playlistsSlice'
 import { submitScan } from '../../features/scan/scanSlice'
 import { useAppDispatch, useAppSelector } from '../../hooks'
@@ -11,13 +11,17 @@ function formatTrackCount(count: number) {
   return `${count} track${count === 1 ? '' : 's'}`
 }
 
+function normalizeTrackCount(count: number | null | undefined) {
+  return typeof count === 'number' && count > 0 ? count : 0
+}
+
 export default function SourceSelectPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const { items, loading, error } = useAppSelector(s => s.playlists)
   const scanLoading = useAppSelector(s => s.scan.loading)
 
-  const [selectedId, setSelectedId] = useState<string>('')
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [threshold, setThreshold] = useState<number>(10)
 
   useEffect(() => {
@@ -25,19 +29,35 @@ export default function SourceSelectPage() {
   }, [dispatch])
 
   useEffect(() => {
-    if (!selectedId && items.length > 0) {
-      setSelectedId(items[0].id)
+    if (selectedIds.length === 0 && items.length > 0) {
+      setSelectedIds([items[0].id])
     }
-  }, [items, selectedId])
+  }, [items, selectedIds.length])
 
-  const selectedPlaylist = items.find(item => item.id === selectedId) ?? null
-  const totalTrackCount = items.reduce((sum, item) => sum + item.totalTracks, 0)
+  const selectedPlaylists = items.filter(item => selectedIds.includes(item.id))
+  const totalTrackCount = items.reduce((sum, item) => sum + normalizeTrackCount(item.totalTracks), 0)
+  const selectedTrackCount = selectedPlaylists.reduce((sum, item) => sum + normalizeTrackCount(item.totalTracks), 0)
+  const maxThreshold = Math.max(1, Math.min(100, selectedTrackCount))
+
+  useEffect(() => {
+    if (threshold > maxThreshold) {
+      setThreshold(maxThreshold)
+    }
+  }, [maxThreshold, threshold])
+
+  const toggleSource = (playlistId: string) => {
+    setSelectedIds(current =>
+      current.includes(playlistId)
+        ? current.filter(id => id !== playlistId)
+        : [...current, playlistId],
+    )
+  }
 
   const handleStart = async () => {
-    if (!selectedId) return
-    const result = await dispatch(submitScan({ sourcePlaylistId: selectedId, threshold }))
+    if (selectedIds.length === 0 || selectedTrackCount <= 0) return
+    const result = await dispatch(submitScan({ sourcePlaylistIds: selectedIds, threshold: Math.min(threshold, maxThreshold) }))
     if (submitScan.fulfilled.match(result)) {
-      navigate('/scan-progress')
+      navigate(`/scan-progress/${result.payload.jobId}`)
     }
   }
 
@@ -46,9 +66,9 @@ export default function SourceSelectPage() {
       <header className="source-select__hero">
         <div>
           <p className="source-select__eyebrow">Source selection</p>
-          <h1 className="source-select__title">Choose the collection that should drive this scan.</h1>
+          <h1 className="source-select__title">Choose one or more collections that should drive this scan.</h1>
           <p className="source-select__subtitle">
-            Liked Songs stays first because it gives the broadest signal, but every owned playlist is available with its own track count.
+            Mix Liked Songs with your owned playlists when you want a broader signal. The scan merges selected sources before tag discovery.
           </p>
         </div>
 
@@ -71,27 +91,25 @@ export default function SourceSelectPage() {
           <div className="source-select__panel-header">
             <div>
               <h2 className="source-select__panel-title">Source library</h2>
-              <p className="source-select__panel-copy">Every playlist shows its track total before you commit.</p>
+              <p className="source-select__panel-copy">Select one or more sources. Zero-track selections are ignored in the threshold cap.</p>
             </div>
-            <span className="pill">{items.length} options</span>
+            <span className="pill">{selectedIds.length}/{items.length} selected</span>
           </div>
 
           {loading ? (
             <p className="loading-text">Loading playlists…</p>
           ) : (
-            <div className="source-select__playlist-list" role="radiogroup" aria-label="Source playlist">
+            <div className="source-select__playlist-list" role="group" aria-label="Source playlists">
               {items.map(p => (
                 <label
                   key={p.id}
-                  className={`source-select__playlist${selectedId === p.id ? ' source-select__playlist--selected' : ''}`}
+                  className={`source-select__playlist${selectedIds.includes(p.id) ? ' source-select__playlist--selected' : ''}`}
                 >
-                  <span className="selection-switch selection-switch--radio">
+                  <span className="selection-switch">
                     <input
-                      type="radio"
-                      name="playlist"
-                      value={p.id}
-                      checked={selectedId === p.id}
-                      onChange={e => setSelectedId(e.target.value)}
+                      type="checkbox"
+                      checked={selectedIds.includes(p.id)}
+                      onChange={() => toggleSource(p.id)}
                     />
                     <span className="selection-switch__track">
                       <span className="selection-switch__thumb" />
@@ -111,8 +129,8 @@ export default function SourceSelectPage() {
                   </span>
 
                   <span className="source-select__playlist-meta">
-                    <span className="source-select__playlist-count">{formatTrackCount(p.totalTracks)}</span>
-                    {selectedId === p.id ? <span className="pill">Selected</span> : null}
+                    <span className="source-select__playlist-count">{formatTrackCount(normalizeTrackCount(p.totalTracks))}</span>
+                    {selectedIds.includes(p.id) ? <span className="pill">Selected</span> : null}
                   </span>
                 </label>
               ))}
@@ -140,31 +158,37 @@ export default function SourceSelectPage() {
             type="range"
             className="form-range"
             min={1}
-            max={50}
+            max={maxThreshold}
             value={threshold}
+            disabled={selectedTrackCount <= 0}
             onChange={e => setThreshold(Number(e.target.value))}
           />
           <p className="form-hint">
-            Proposed tags with fewer than {threshold} tracks will be ignored instead of creating a fresh playlist.
+            Proposed tags with fewer than {Math.min(threshold, maxThreshold)} tracks will be ignored instead of creating a fresh playlist.
           </p>
 
-          {selectedPlaylist ? (
+          {selectedPlaylists.length > 0 ? (
             <div className="source-select__selection-summary">
-              <p className="source-select__selection-label">Current source</p>
-              <p className="source-select__selection-name">{selectedPlaylist.name}</p>
+              <p className="source-select__selection-label">Selected sources</p>
+              <p className="source-select__selection-name">{selectedPlaylists.length} source{selectedPlaylists.length === 1 ? '' : 's'}</p>
               <p className="source-select__selection-copy">
-                This scan will analyze {formatTrackCount(selectedPlaylist.totalTracks)} from the selected source.
+                This scan will analyze {formatTrackCount(selectedTrackCount)} from the selected sources.
               </p>
             </div>
           ) : null}
 
-          <button
-            className="btn btn--primary source-select__start"
-            onClick={handleStart}
-            disabled={items.length === 0 || !selectedId || scanLoading}
-          >
-            {scanLoading ? 'Starting…' : 'Start Scan'}
-          </button>
+          <div className="source-select__panel-actions">
+            <Link className="btn btn--ghost source-select__history" to="/history">
+              Scan history
+            </Link>
+            <button
+              className="btn btn--primary source-select__start"
+              onClick={handleStart}
+              disabled={items.length === 0 || selectedIds.length === 0 || selectedTrackCount <= 0 || scanLoading}
+            >
+              {scanLoading ? 'Starting…' : 'Start Scan'}
+            </button>
+          </div>
         </aside>
       </div>
     </div>

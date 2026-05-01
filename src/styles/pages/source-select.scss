@@ -255,8 +255,21 @@
   }
 
   &__start {
-    width: 100%;
+    flex: 1;
+  }
+
+  &__history {
+    white-space: nowrap;
+  }
+
+  &__panel-actions {
+    display: flex;
+    gap: 12px;
     margin-top: auto;
+
+    @media (max-width: 640px) {
+      flex-direction: column;
+    }
   }
 }
 

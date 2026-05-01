@@ -1,0 +1,77 @@
+@use '../variables' as *;
+
+.updates-page {
+  padding: 28px 0 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  &__hero {
+    padding: 8px 4px;
+  }
+
+  &__eyebrow {
+    color: $color-green-soft;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  &__title {
+    max-width: 780px;
+    font-family: $font-display;
+    font-size: clamp(32px, 4vw, 56px);
+    line-height: 1.04;
+    letter-spacing: -0.05em;
+  }
+
+  &__subtitle {
+    max-width: 760px;
+    margin-top: 12px;
+    color: $color-text-muted;
+    line-height: 1.6;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  &__post {
+    padding: 28px;
+    border-radius: 24px;
+    background: rgba(12, 23, 22, 0.84);
+    border: 1px solid $color-border;
+    box-shadow: $shadow-card;
+    backdrop-filter: blur(16px);
+  }
+
+  &__date {
+    color: $color-green-soft;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  &__post-title {
+    font-family: $font-display;
+    font-size: 32px;
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+    margin-bottom: 16px;
+  }
+
+  &__post-copy {
+    color: $color-text-muted;
+    line-height: 1.7;
+
+    & + & {
+      margin-top: 12px;
+    }
+  }
+}

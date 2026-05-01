@@ -1,0 +1,157 @@
+@use '../variables' as *;
+
+.scan-history {
+  padding: 28px 0 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  &__eyebrow {
+    color: $color-green-soft;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  &__title {
+    max-width: 800px;
+    font-family: $font-display;
+    font-size: clamp(32px, 4vw, 54px);
+    line-height: 1.04;
+    letter-spacing: -0.05em;
+  }
+
+  &__subtitle {
+    margin-top: 10px;
+    max-width: 760px;
+    color: $color-text-muted;
+    line-height: 1.6;
+  }
+
+  &__empty,
+  &__item {
+    background: rgba(12, 23, 22, 0.84);
+    border: 1px solid $color-border;
+    box-shadow: $shadow-card;
+    backdrop-filter: blur(16px);
+  }
+
+  &__empty {
+    padding: 28px;
+    border-radius: 24px;
+  }
+
+  &__empty-title {
+    font-family: $font-display;
+    font-size: 28px;
+  }
+
+  &__empty-copy {
+    margin-top: 8px;
+    color: $color-text-muted;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  &__item {
+    padding: 24px;
+    border-radius: 24px;
+  }
+
+  &__item--active {
+    border-color: rgba($color-green-soft, 0.3);
+    box-shadow: inset 0 0 0 1px rgba($color-green, 0.14), $shadow-card;
+  }
+
+  &__item-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  &__status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  &__spinner {
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    border: 2px solid rgba($color-green-soft, 0.26);
+    border-top-color: $color-green-soft;
+    animation: scan-history-spin 900ms linear infinite;
+  }
+
+  &__item-title {
+    font-family: $font-display;
+    font-size: 26px;
+  }
+
+  &__item-copy {
+    margin-top: 8px;
+    color: $color-text-muted;
+  }
+
+  &__meta-grid {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+
+    @media (max-width: 960px) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (max-width: 560px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__meta-card {
+    padding: 16px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  &__meta-label {
+    display: block;
+    margin-bottom: 8px;
+    color: $color-text-muted;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+}
+
+@keyframes scan-history-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
