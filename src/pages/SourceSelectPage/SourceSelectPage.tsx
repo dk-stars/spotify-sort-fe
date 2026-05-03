@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { loadPlaylists } from '../../features/playlists/playlistsSlice'
 import { submitScan } from '../../features/scan/scanSlice'
 import { useAppDispatch, useAppSelector } from '../../hooks'
+import { fetchTaggingConfig } from '../../api/apiClient'
+import type { ProviderMode, TaggingConfig } from '../../types'
 import '../../styles/pages/source-select.scss'
 
 const LIKED_SONGS_SOURCE_ID = '__liked_songs__'
@@ -15,6 +17,12 @@ function normalizeTrackCount(count: number | null | undefined) {
   return typeof count === 'number' && count > 0 ? count : 0
 }
 
+const PROVIDER_LABELS: Record<ProviderMode, string> = {
+  LASTFM_ONLY: 'Last.fm only',
+  BOTH: 'Last.fm + AI',
+  LLM_ONLY: 'AI only',
+}
+
 export default function SourceSelectPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
@@ -23,11 +31,21 @@ export default function SourceSelectPage() {
 
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [threshold, setThreshold] = useState<number>(10)
+  const [taggingConfig, setTaggingConfig] = useState<TaggingConfig | null>(null)
+  const [providerMode, setProviderMode] = useState<ProviderMode>('LASTFM_ONLY')
 
   const isDefaultOnlySelected = selectedIds.length === 1 && selectedIds[0] === LIKED_SONGS_SOURCE_ID
 
   useEffect(() => {
     dispatch(loadPlaylists())
+    fetchTaggingConfig()
+      .then(cfg => {
+        setTaggingConfig(cfg)
+        setProviderMode(cfg.defaultMode)
+      })
+      .catch(() => {
+        // config fetch failure is non-fatal — keep default LASTFM_ONLY
+      })
   }, [dispatch])
 
   useEffect(() => {
@@ -57,7 +75,7 @@ export default function SourceSelectPage() {
 
   const handleStart = async () => {
     if (selectedIds.length === 0 || selectedTrackCount <= 0) return
-    const result = await dispatch(submitScan({ sourcePlaylistIds: selectedIds, threshold: Math.min(threshold, maxThreshold) }))
+    const result = await dispatch(submitScan({ sourcePlaylistIds: selectedIds, threshold: Math.min(threshold, maxThreshold), providerMode }))
     if (submitScan.fulfilled.match(result)) {
       navigate(`/scan-progress/${result.payload.jobId}`)
     }
@@ -173,6 +191,36 @@ export default function SourceSelectPage() {
           <p className="form-hint">
             Proposed tags with fewer than {Math.min(threshold, maxThreshold)} tracks will be ignored instead of creating a fresh playlist.
           </p>
+
+          {taggingConfig && taggingConfig.availableModes.length > 1 && (
+            <div>
+              <div className="source-select__setting-head">
+                <label className="form-label" htmlFor="providerMode">
+                  Tag source
+                </label>
+                {taggingConfig.llmConfigured && (
+                  <span className="pill pill--accent">AI available</span>
+                )}
+              </div>
+              <select
+                id="providerMode"
+                className="form-select"
+                value={providerMode}
+                onChange={e => setProviderMode(e.target.value as ProviderMode)}
+              >
+                {taggingConfig.availableModes.map(mode => (
+                  <option key={mode} value={mode}>
+                    {PROVIDER_LABELS[mode]}
+                  </option>
+                ))}
+              </select>
+              <p className="form-hint">
+                {providerMode === 'LASTFM_ONLY' && 'Tags come from Last.fm. Fast and free.'}
+                {providerMode === 'BOTH' && 'Last.fm first, AI fills in unresolved tracks. Best coverage.'}
+                {providerMode === 'LLM_ONLY' && 'Tags come from AI only. Useful for evaluation.'}
+              </p>
+            </div>
+          )}
 
           {selectedPlaylists.length > 0 ? (
             <div className="source-select__selection-summary">
