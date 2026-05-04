@@ -104,15 +104,129 @@
   &__panel--controls {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 24px; // increase vertical space between refresh and pill
   }
 
   &__panel-header {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
+    flex-direction: column;
+    gap: 12px;
     margin-bottom: 18px;
+  }
+
+  &__title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  &__title-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__selection-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba($color-green, 0.08);
+    border-radius: 12px;
+    border: 1px solid rgba($color-green-soft, 0.16);
+
+    .pill {
+      background: rgba($color-green, 0.15);
+      border-color: rgba($color-green-soft, 0.32);
+      color: $color-green-soft;
+      font-size: 13px;
+      min-height: 34px;
+      padding: 0 14px;
+    }
+  }
+
+  &__skipped-message {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba($color-warning, 0.06);
+    border: 1px solid rgba($color-warning, 0.18);
+    color: $color-warning;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  &__header-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  &__refresh-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px; // ensure a little extra breathing room below the icon
+  }
+
+  &__selected-pill {
+    align-self: flex-start;
+  }
+
+  &__refresh-button {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba($color-green-soft, 0.2);
+    color: $color-text;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover:not([disabled]) {
+      background: rgba($color-green, 0.1);
+      border-color: rgba($color-green-soft, 0.4);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba($color-green, 0.1);
+    }
+
+    &[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    &.is-loading svg {
+      animation: rotate 1s linear infinite;
+    }
+  }
+
+  &__refresh-label {
+    display: inline-block;
+    min-width: 72px; // prevent width jump between 'Refresh' and 'Refreshing…'
+    color: $color-text-muted;
+    font-size: 13px;
+    line-height: 1;
+    white-space: nowrap;
+    text-align: left;
+    margin-left: 8px;
+  }
+
+  @keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 
   &__panel-title {

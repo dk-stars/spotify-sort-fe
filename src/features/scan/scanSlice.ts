@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit'
 import { startScan, fetchScanStatus, cancelScan } from '../../api/apiClient'
-import type { ScanStatus, ScanStatusResponse, SyncSuggestResult } from '../../types'
+import type { ScanStatus, ScanStatusResponse, SyncSuggestResult, ProviderMode } from '../../types'
 
 interface ScanState {
   jobId: number | null
@@ -34,8 +34,8 @@ const initialState: ScanState = {
 
 export const submitScan = createAsyncThunk(
   'scan/submit',
-  async ({ sourcePlaylistIds, threshold }: { sourcePlaylistIds: string[]; threshold: number }) => {
-    return await startScan(sourcePlaylistIds, threshold)
+  async ({ sourcePlaylistIds, threshold, providerMode }: { sourcePlaylistIds: string[]; threshold: number; providerMode?: ProviderMode }) => {
+    return await startScan(sourcePlaylistIds, threshold, providerMode)
   },
 )
 

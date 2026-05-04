@@ -41,6 +41,7 @@ export interface SyncSuggestResult {
 
 // ── Scan ──────────────────────────────────────────────────────────────────────
 export type ScanStatus = 'PENDING' | 'RUNNING' | 'CANCELLING' | 'CANCELLED' | 'DONE' | 'FAILED'
+export type ProviderMode = 'LASTFM_ONLY' | 'BOTH' | 'LLM_ONLY'
 
 export interface ScanStatusResponse {
   jobId: number
@@ -61,6 +62,7 @@ export interface ScanStatusResponse {
   canUndo: boolean
   executionRequest: ExecuteRequest | null
   executionSummary: ExecuteSummary | null
+  providerMode: ProviderMode | null
 }
 
 export interface ScanHistoryItem {
@@ -77,6 +79,14 @@ export interface ScanHistoryItem {
   applied: boolean
   undone: boolean
   canUndo: boolean
+  providerMode: ProviderMode | null
+}
+
+// ── Tagging config ────────────────────────────────────────────────────────────
+export interface TaggingConfig {
+  availableModes: ProviderMode[]
+  defaultMode: ProviderMode
+  llmConfigured: boolean
 }
 
 // ── Proposal execution ────────────────────────────────────────────────────────

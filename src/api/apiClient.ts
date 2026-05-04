@@ -6,6 +6,8 @@ import type {
   ScanStatusResponse,
   ExecuteRequest,
   ExecuteSummary,
+  ProviderMode,
+  TaggingConfig,
 } from '../types'
 import { API_BASE_URL } from '../config'
 
@@ -32,12 +34,19 @@ export const logout = (): Promise<void> =>
 export const fetchPlaylists = (): Promise<PlaylistSummary[]> =>
   api.get<PlaylistSummary[]>('/playlists').then(r => r.data)
 
+export const refreshPlaylists = (): Promise<PlaylistSummary[]> =>
+  api.post<PlaylistSummary[]>('/playlists/refresh').then(r => r.data)
+
 // ── Scan ──────────────────────────────────────────────────────────────────────
 export const startScan = (
   sourcePlaylistIds: string[],
   threshold: number,
+  providerMode?: ProviderMode,
 ): Promise<{ jobId: number }> =>
-  api.post<{ jobId: number }>('/scan', { sourcePlaylistIds, threshold }).then(r => r.data)
+  api.post<{ jobId: number }>('/scan', { sourcePlaylistIds, threshold, providerMode }).then(r => r.data)
+
+export const fetchTaggingConfig = (): Promise<TaggingConfig> =>
+  api.get<TaggingConfig>('/config/tagging').then(r => r.data)
 
 export const fetchScanStatus = (jobId: number): Promise<ScanStatusResponse> =>
   api.get<ScanStatusResponse>(`/scan/${jobId}`).then(r => r.data)
