@@ -6,6 +6,8 @@ import { useAppDispatch, useAppSelector } from '../../hooks'
 import { fetchTaggingConfig } from '../../api/apiClient'
 import type { ProviderMode, TaggingConfig } from '../../types'
 import '../../styles/pages/source-select.scss'
+import RefreshPlaylistsButton from '../../components/RefreshPlaylistsButton'
+import SelectedCountPill from '../../components/SelectedCountPill'
 
 const LIKED_SONGS_SOURCE_ID = '__liked_songs__'
 
@@ -59,6 +61,9 @@ export default function SourceSelectPage() {
   const selectedTrackCount = selectedPlaylists.reduce((sum, item) => sum + normalizeTrackCount(item.totalTracks), 0)
   const maxThreshold = Math.max(1, Math.min(100, selectedTrackCount))
 
+  // Whether the special "Liked Songs" source is present in the returned playlists.
+  const hasLikedSongs = items.some(item => item.id === LIKED_SONGS_SOURCE_ID)
+
   useEffect(() => {
     if (threshold > maxThreshold) {
       setThreshold(maxThreshold)
@@ -72,6 +77,8 @@ export default function SourceSelectPage() {
         : [...current, playlistId],
     )
   }
+
+  // Refresh handled by standalone RefreshPlaylistsButton component
 
   const handleStart = async () => {
     if (selectedIds.length === 0 || selectedTrackCount <= 0) return
@@ -104,17 +111,31 @@ export default function SourceSelectPage() {
         </div>
       </header>
 
+
+
       {error && <p className="error-text">{error}</p>}
 
       <div className="source-select__grid">
         <section className="source-select__panel">
           <div className="source-select__panel-header">
-            <div>
+            <div className="source-select__title-row">
               <h2 className="source-select__panel-title">Source library</h2>
-              <p className="source-select__panel-copy">Select one or more sources. Zero-track selections are ignored in the threshold cap.</p>
+              <div className="source-select__title-controls">
+                <RefreshPlaylistsButton />
+              </div>
             </div>
-            <span className="pill">{selectedIds.length}/{items.length} selected</span>
+            <p className="source-select__panel-copy">Select one or more sources. Zero-track selections are ignored in the threshold cap.</p>
           </div>
+          <div className="source-select__selection-indicator">
+            <SelectedCountPill selected={selectedIds.length} total={items.length} />
+          </div>
+
+          {/* Inform the user when the special "Liked Songs" source is absent (commonly due to missing scopes). */}
+          {!loading && !hasLikedSongs && (
+            <div className="source-select__skipped-message" role="alert">
+              Skipping source playlist __liked_songs__: insufficient permissions
+            </div>
+          )}
 
           {loading ? (
             <p className="loading-text">Loading playlists…</p>

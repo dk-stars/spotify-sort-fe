@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
+import ErrorBoundary from './components/ErrorBoundary'
 import LoginPage from './pages/LoginPage/LoginPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
@@ -14,7 +15,8 @@ const UpdatesPage = lazy(() => import('./pages/UpdatesPage/UpdatesPage'))
 export default function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={null}>
+      <ErrorBoundary>
+      <Suspense fallback={<div /> }>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
 
@@ -102,6 +104,7 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </Suspense>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

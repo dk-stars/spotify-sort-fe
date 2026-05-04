@@ -34,6 +34,9 @@ export const logout = (): Promise<void> =>
 export const fetchPlaylists = (): Promise<PlaylistSummary[]> =>
   api.get<PlaylistSummary[]>('/playlists').then(r => r.data)
 
+export const refreshPlaylists = (): Promise<PlaylistSummary[]> =>
+  api.post<PlaylistSummary[]>('/playlists/refresh').then(r => r.data)
+
 // ── Scan ──────────────────────────────────────────────────────────────────────
 export const startScan = (
   sourcePlaylistIds: string[],
