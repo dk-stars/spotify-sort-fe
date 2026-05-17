@@ -5,42 +5,8 @@ import { initSelection, restoreSelectionFromExecution } from '../../features/pro
 import { hydrateScan } from '../../features/scan/scanSlice'
 import { useAppDispatch } from '../../hooks'
 import type { PlaylistIdea, PlaylistUpdate, ScanStatusResponse, TrackRef } from '../../types'
+import { formatPlaylistName, formatSuggestedCount, formatTrackCount, getTopArtists, getTrackSubtitle, normalizeSelectionKey } from '../../utils/scanView'
 import '../../styles/pages/dashboard.scss'
-
-function getTrackSubtitle(artistNames: string[]) {
-  return artistNames.join(', ')
-}
-
-function getTopArtists(tracks: { artistNames: string[] }[]) {
-  const counts = new Map<string, number>()
-
-  tracks.forEach(track => {
-    track.artistNames.forEach(artistName => {
-      const normalized = artistName.trim()
-      if (!normalized) return
-      counts.set(normalized, (counts.get(normalized) ?? 0) + 1)
-    })
-  })
-
-  return [...counts.entries()]
-    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
-    .slice(0, 3)
-    .map(([artistName]) => artistName)
-    .join(', ') || 'No artist data'
-}
-
-function formatPlaylistName(name: string) {
-  if (!name) return name
-  return name.charAt(0).toUpperCase() + name.slice(1)
-}
-
-function formatSuggestedCount(selectedCount: number, suggestedCount: number) {
-  return `${selectedCount}/${suggestedCount} suggested`
-}
-
-function formatTrackCount(selectedCount: number, totalCount: number) {
-  return `${selectedCount}/${totalCount} tracks`
-}
 
 function filterTracks(tracks: TrackRef[], selectedTrackUris: Set<string> | null) {
   if (!selectedTrackUris) {
@@ -48,6 +14,9 @@ function filterTracks(tracks: TrackRef[], selectedTrackUris: Set<string> | null)
   }
   return tracks.filter(track => selectedTrackUris.has(track.trackUri))
 }
+
+type VisiblePlaylistUpdate = PlaylistUpdate & { totalTracks: number }
+type VisiblePlaylistIdea = PlaylistIdea & { totalTracks: number }
 
 export default function ScanResultPage() {
   const dispatch = useAppDispatch()
@@ -96,7 +65,7 @@ export default function ScanResultPage() {
     }
   }, [jobId, navigate])
 
-  const visibleUpdates = useMemo(() => {
+  const visibleUpdates = useMemo<VisiblePlaylistUpdate[]>(() => {
     if (!details?.result) return []
 
     const selectedByPlaylist = new Map(
@@ -111,18 +80,19 @@ export default function ScanResultPage() {
       .filter(update => update.tracks.length > 0 || !details.executionRequest)
   }, [details])
 
-  const visibleIdeas = useMemo(() => {
+  const visibleIdeas = useMemo<VisiblePlaylistIdea[]>(() => {
     if (!details?.result) return []
 
     const selectedByIdea = new Map(
-      (details.executionRequest?.creates ?? []).map(create => [create.playlistName, new Set(create.trackUris)]),
+      (details.executionRequest?.creates ?? []).map(create => [normalizeSelectionKey(create.playlistName), new Set(create.trackUris)]),
     )
 
     return [...details.result.newIdeas]
       .sort((left, right) => right.tracks.length - left.tracks.length)
       .map(idea => ({
         ...idea,
-        tracks: filterTracks(idea.tracks, selectedByIdea.get(idea.tag) ?? null),
+        totalTracks: idea.tracks.length,
+        tracks: filterTracks(idea.tracks, selectedByIdea.get(normalizeSelectionKey(idea.tag)) ?? null),
       }))
       .filter(idea => idea.tracks.length > 0 || !details.executionRequest)
   }, [details])
@@ -225,7 +195,7 @@ export default function ScanResultPage() {
             <p className="panel__empty">No existing playlist updates recorded for this scan.</p>
           ) : (
             <ul className="panel__list">
-              {visibleUpdates.map((update: PlaylistUpdate) => (
+              {visibleUpdates.map((update: VisiblePlaylistUpdate) => (
                 <li key={update.playlistId} className="panel__item panel__item--expanded">
                   <div className="panel__item-shell">
                     <div className="panel__item-copy">
@@ -233,7 +203,7 @@ export default function ScanResultPage() {
                       <span className="panel__item-hint">{getTopArtists(update.tracks)}</span>
                     </div>
                     <div className="panel__item-meta">
-                      <span className="panel__item-count">{formatSuggestedCount(update.tracks.length, update.tracks.length)}</span>
+                      <span className="panel__item-count">{formatSuggestedCount(update.tracks.length, update.totalTracks)}</span>
                     </div>
                   </div>
 
@@ -274,7 +244,7 @@ export default function ScanResultPage() {
             <p className="panel__empty">No new playlists were created or proposed for this scan.</p>
           ) : (
             <ul className="panel__list">
-              {visibleIdeas.map((idea: PlaylistIdea) => (
+              {visibleIdeas.map((idea: VisiblePlaylistIdea) => (
                 <li key={idea.tag} className="panel__item panel__item--expanded">
                   <div className="panel__item-shell">
                     <div className="panel__item-copy">
@@ -282,7 +252,7 @@ export default function ScanResultPage() {
                       <span className="panel__item-hint">{getTopArtists(idea.tracks)}</span>
                     </div>
                     <div className="panel__item-meta">
-                      <span className="panel__item-count">{formatTrackCount(idea.tracks.length, idea.tracks.length)}</span>
+                      <span className="panel__item-count">{formatTrackCount(idea.tracks.length, idea.totalTracks)}</span>
                     </div>
                   </div>
 

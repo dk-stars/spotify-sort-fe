@@ -1,5 +1,17 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+import { createRequire } from 'node:module'
+
+const require = createRequire(import.meta.url)
+const nodeCrypto = require('crypto')
+
+if (typeof nodeCrypto.getRandomValues !== 'function' && nodeCrypto.webcrypto?.getRandomValues) {
+  nodeCrypto.getRandomValues = nodeCrypto.webcrypto.getRandomValues.bind(nodeCrypto.webcrypto)
+}
+
+if (!globalThis.crypto && nodeCrypto.webcrypto) {
+  globalThis.crypto = nodeCrypto.webcrypto as Crypto
+}
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')

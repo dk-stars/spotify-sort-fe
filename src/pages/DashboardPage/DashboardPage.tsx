@@ -16,43 +16,8 @@ import {
 import { fetchScanStatus } from '../../api/apiClient'
 import { hydrateScan, resetScan } from '../../features/scan/scanSlice'
 import { useAppDispatch, useAppSelector } from '../../hooks'
+import { findMatchingSelectionKey, formatPlaylistName, formatSuggestedCount, formatTrackCount, getTopArtists, getTrackSubtitle } from '../../utils/scanView'
 import '../../styles/pages/dashboard.scss'
-
-function formatTrackCount(selectedCount: number, totalCount: number) {
-  return `${selectedCount}/${totalCount} tracks`
-}
-
-function formatSuggestedCount(selectedCount: number, suggestedCount: number) {
-  return `${selectedCount}/${suggestedCount} suggested`
-}
-
-function getTrackSubtitle(artistNames: string[]) {
-  return artistNames.join(', ')
-}
-
-function getTopArtists(tracks: { artistNames: string[] }[]) {
-  const counts = new Map<string, number>()
-
-  tracks.forEach(track => {
-    track.artistNames.forEach(artistName => {
-      const normalized = artistName.trim()
-      if (!normalized) return
-      counts.set(normalized, (counts.get(normalized) ?? 0) + 1)
-    })
-  })
-
-  const topArtists = [...counts.entries()]
-    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
-    .slice(0, 3)
-    .map(([artistName]) => artistName)
-
-  return topArtists.length > 0 ? topArtists.join(', ') : 'No artist data'
-}
-
-function formatPlaylistName(name: string) {
-  if (!name) return name
-  return name.charAt(0).toUpperCase() + name.slice(1)
-}
 
 export default function DashboardPage() {
   const dispatch = useAppDispatch()
@@ -74,6 +39,8 @@ export default function DashboardPage() {
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({})
   const [loadingSavedProposal, setLoadingSavedProposal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const getSelectedIdeaKey = (tag: string) => findMatchingSelectionKey(selectedIdeaTags, tag)
+  const isIdeaSelected = (tag: string) => getSelectedIdeaKey(tag) !== undefined
 
   useEffect(() => {
     if (!routeJobId) {
@@ -143,9 +110,10 @@ export default function DashboardPage() {
       })
 
     sortedIdeas
-      .filter(item => selectedIdeaTags.includes(item.tag))
+      .filter(item => isIdeaSelected(item.tag))
       .forEach(item => {
-        const excluded = new Set(excludedIdeaTrackUris[item.tag] ?? [])
+        const selectedKey = getSelectedIdeaKey(item.tag)
+        const excluded = new Set((selectedKey ? excludedIdeaTrackUris[selectedKey] : undefined) ?? [])
         item.tracks
           .filter(track => !excluded.has(track.trackUri))
           .forEach(track => selectedTracks.set(track.trackUri, { trackName: track.trackName, artistNames: track.artistNames, albumImageUrl: track.albumImageUrl }))
@@ -175,8 +143,11 @@ export default function DashboardPage() {
     .filter(item => selectedUpdateIds.includes(item.playlistId))
     .reduce((sum, item) => sum + item.tracks.length - (excludedUpdateTrackUris[item.playlistId] ?? []).length, 0)
     + sortedIdeas
-      .filter(item => selectedIdeaTags.includes(item.tag))
-      .reduce((sum, item) => sum + item.tracks.length - (excludedIdeaTrackUris[item.tag] ?? []).length, 0)
+      .filter(item => isIdeaSelected(item.tag))
+      .reduce((sum, item) => {
+        const selectedKey = getSelectedIdeaKey(item.tag)
+        return sum + item.tracks.length - ((selectedKey ? excludedIdeaTrackUris[selectedKey] : undefined) ?? []).length
+      }, 0)
 
   const handleApply = () => {
     if (deleteFromSources) {
@@ -431,8 +402,9 @@ export default function DashboardPage() {
               {sortedIdeas.map(idea => (
                 (() => {
                   const cardKey = `idea:${idea.tag}`
-                  const isSelected = selectedIdeaTags.includes(idea.tag)
-                  const excluded = excludedIdeaTrackUris[idea.tag] ?? []
+                  const selectedKey = getSelectedIdeaKey(idea.tag)
+                  const isSelected = selectedKey !== undefined
+                  const excluded = (selectedKey ? excludedIdeaTrackUris[selectedKey] : undefined) ?? []
                   const includedCount = isSelected ? idea.tracks.length - excluded.length : 0
                   const expanded = !!expandedItems[cardKey]
                   const topArtists = getTopArtists(idea.tracks)

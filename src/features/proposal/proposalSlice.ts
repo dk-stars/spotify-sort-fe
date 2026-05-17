@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit'
 import { executeProposal } from '../../api/apiClient'
 import type { ExecuteRequest, ExecuteSummary, SyncSuggestResult } from '../../types'
+import { findMatchingSelectionKey, normalizeSelectionKey } from '../../utils/scanView'
 
 interface ProposalState {
   // Sets of keys the user has checked
@@ -46,6 +47,7 @@ export const applyProposal = createAsyncThunk(
     const scan = state.scan
 
     const result: SyncSuggestResult = scan.result
+    const selectedIdeaTagSet = new Set(proposal.selectedIdeaTags.map(normalizeSelectionKey))
     const updates = result.playlistsToUpdate
       .filter(u => proposal.selectedUpdateIds.includes(u.playlistId))
       .map(u => ({
@@ -57,13 +59,20 @@ export const applyProposal = createAsyncThunk(
       .filter(u => u.trackUris.length > 0)
 
     const creates = result.newIdeas
-      .filter(i => proposal.selectedIdeaTags.includes(i.tag))
-      .map(i => ({
-        playlistName: i.tag,
-        trackUris: i.tracks
-          .filter(t => !(proposal.excludedIdeaTrackUris[i.tag] ?? []).includes(t.trackUri))
-          .map(t => t.trackUri),
-      }))
+      .filter(i => selectedIdeaTagSet.has(normalizeSelectionKey(i.tag)))
+      .map(i => {
+        const selectedKey = findMatchingSelectionKey(Object.keys(proposal.excludedIdeaTrackUris), i.tag)
+        const excludedTrackUris = selectedKey
+          ? proposal.excludedIdeaTrackUris[selectedKey]
+          : proposal.excludedIdeaTrackUris[i.tag] ?? []
+
+        return {
+          playlistName: i.tag,
+          trackUris: i.tracks
+            .filter(t => !excludedTrackUris.includes(t.trackUri))
+            .map(t => t.trackUri),
+        }
+      })
       .filter(i => i.trackUris.length > 0)
 
     return await executeProposal({
@@ -166,7 +175,7 @@ const proposalSlice = createSlice({
         executionRequest.updates.map(update => [update.playlistId, new Set(update.trackUris)]),
       ) as Record<string, Set<string>>
       const ideaTrackUris = Object.fromEntries(
-        executionRequest.creates.map(create => [create.playlistName, new Set(create.trackUris)]),
+        executionRequest.creates.map(create => [normalizeSelectionKey(create.playlistName), new Set(create.trackUris)]),
       ) as Record<string, Set<string>>
 
       state.selectedUpdateIds = executionRequest.updates.map(update => update.playlistId)
@@ -178,12 +187,15 @@ const proposalSlice = createSlice({
         })),
         updateTrackUris,
       )
-      state.excludedIdeaTrackUris = buildExcludedTrackMap(
-        result.newIdeas.map(idea => ({
-          key: idea.tag,
-          allTrackUris: idea.tracks.map(track => track.trackUri),
-        })),
-        ideaTrackUris,
+      state.excludedIdeaTrackUris = Object.fromEntries(
+        result.newIdeas.map(idea => {
+          const matchingKey = findMatchingSelectionKey(executionRequest.creates.map(create => create.playlistName), idea.tag) ?? idea.tag
+          const selectedTrackUris = ideaTrackUris[normalizeSelectionKey(matchingKey)]
+          return [
+            matchingKey,
+            idea.tracks.filter(track => !selectedTrackUris?.has(track.trackUri)).map(track => track.trackUri),
+          ]
+        }),
       )
       state.deleteFromSources = executionRequest.deleteFromSources ?? false
       state.summary = null

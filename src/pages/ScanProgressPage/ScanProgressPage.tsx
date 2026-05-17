@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { pollScan, requestScanCancel, resetScan } from '../../features/scan/scanSlice'
-import { resetProposal } from '../../features/proposal/proposalSlice'
-import { initSelection } from '../../features/proposal/proposalSlice'
+import { initSelection, resetProposal } from '../../features/proposal/proposalSlice'
 import { useAppDispatch, useAppSelector } from '../../hooks'
+import { startSequentialPolling } from '../../utils/scanPolling'
 import '../../styles/pages/scan-progress.scss'
 
 const POLL_INTERVAL_MS = 2500
@@ -29,7 +29,6 @@ export default function ScanProgressPage() {
     totalItems,
     canceling,
   } = useAppSelector(s => s.scan)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const activeJobId = routeJobId ? Number(routeJobId) : jobId
 
   const activeStepIndex = useMemo(() => {
@@ -81,29 +80,27 @@ export default function ScanProgressPage() {
       return
     }
 
-    const poll = async () => {
+    return startSequentialPolling(async () => {
       const result = await dispatch(pollScan(activeJobId))
       if (pollScan.fulfilled.match(result)) {
         const { status: nextStatus, result: scanResult } = result.payload
         if (nextStatus === 'DONE' && scanResult) {
-          clearInterval(intervalRef.current!)
           await dispatch(initSelection(scanResult))
           navigate(`/dashboard/${activeJobId}`)
-        } else if (nextStatus === 'FAILED' || nextStatus === 'CANCELLED') {
-          clearInterval(intervalRef.current!)
+          return false
         }
-      } else if (pollScan.rejected.match(result)) {
-        clearInterval(intervalRef.current!)
-        navigate('/')
+        if (nextStatus === 'FAILED' || nextStatus === 'CANCELLED') {
+          return false
+        }
+        return true
       }
-    }
 
-    poll()
-    intervalRef.current = setInterval(poll, POLL_INTERVAL_MS)
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
+      if (pollScan.rejected.match(result)) {
+        navigate('/')
+        return false
+      }
+      return true
+    }, POLL_INTERVAL_MS)
   }, [activeJobId, dispatch, navigate])
 
   const handleCancel = async () => {
@@ -138,7 +135,7 @@ export default function ScanProgressPage() {
         <div className="scan-progress__card scan-progress__card--state">
           <p className="scan-progress__eyebrow">Scan cancelled</p>
           <h1 className="scan-progress__title">No proposal was generated.</h1>
-          <p className="scan-progress__hint">No proposal was generated.</p>
+          <p className="scan-progress__hint">You can start a new scan from source selection when you're ready.</p>
           <div className="scan-progress__actions">
             <button className="btn btn--ghost" onClick={handleBackHome}>
               Back to source selection

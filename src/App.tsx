@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import LoginPage from './pages/LoginPage/LoginPage'
+import AuthCallbackPage from './pages/AuthCallbackPage/AuthCallbackPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 
@@ -17,6 +18,7 @@ export default function App() {
       <Suspense fallback={<div /> }>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
         <Route
           path="/"
